@@ -35,7 +35,7 @@ CTools::CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrde
     m_symbol = symbol;
     m_trade = _trade;
     m_positionInfo = _positionInfo;
-    m_orderInfo = *_orderInfo;
+    m_orderInfo = _orderInfo;
 }
 CTools::~CTools()
 {
