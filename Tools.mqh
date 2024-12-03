@@ -8,7 +8,6 @@ private:
     CTrade *m_trade;
     CPositionInfo *m_positionInfo;
     COrderInfo m_orderInfo;
-
     datetime m_prevBarTime ;
 
 
@@ -26,16 +25,19 @@ public:
     int GetPositionCount(long magicNum);
     // 获取当前挂单数量
     int GetOrderCount(long magicNum);
+    // 计算手数
+    double CalcLots( double et, double sl, double slParam);
 
 
 };
 
-CTools::CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
+CTools::CTools(string _symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
 {
-    m_symbol = symbol;
+    m_symbol = _symbol;
     m_trade = _trade;
     m_positionInfo = _positionInfo;
     m_orderInfo = _orderInfo;
+    m_prevBarTime=INT_MIN;
 }
 CTools::~CTools()
 {
@@ -46,8 +48,6 @@ CTools::~CTools()
 bool CTools::IsNewBar(ENUM_TIMEFRAMES timeframe)
 {
     datetime currentBarTime = iTime(m_symbol, timeframe, 0);
-    m_prevBarTime = currentBarTime;
-
     if (m_prevBarTime < currentBarTime)
     {
         m_prevBarTime = currentBarTime;
@@ -140,4 +140,32 @@ int CTools::GetPositionCount(long magicNum)
     return count;
 }
 
+// 进厂价格，止损价格，账户余额的百分数
+double CTools::CalcLots( double et, double sl, double slParam)
+{
+    double slMoney = 0;
+    slMoney = AccountInfoDouble(ACCOUNT_BALANCE) * slParam / 100.0;
+    // 计算止损距离
+    long digits = SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
 
+    double slDistance = NormalizeDouble(MathAbs(et - sl), (int)digits) / Point();
+
+    if (slDistance <= 0)
+        return 0;
+
+    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+    if (tickValue == 0)
+        return 0;
+    // 风控 / 止损 / 点值
+    double lot = NormalizeDouble(slMoney / slDistance / tickValue, 2);
+
+    double lotstep = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_STEP);
+    lot = MathRound(lot / lotstep) * lotstep;
+
+    if (lot < SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MIN))
+        lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MIN);
+    else if (lot >= SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MAX))
+        lot = 10;
+
+    return lot;
+}
