@@ -132,16 +132,5 @@ bool IsNRSequence()
     return true;
 };
 
-bool IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe)
-{
-    datetime currentBarTime = iTime(symbol, timeframe, 0);
-    static datetime prevBarTime = currentBarTime;
 
-    if (prevBarTime < currentBarTime)
-    {
-        prevBarTime = currentBarTime;
-        return true;
-    }
-    return false;
-}
 //+------------------------------------------------------------------+
