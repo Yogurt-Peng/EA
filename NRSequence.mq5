@@ -12,8 +12,8 @@ input int TakeProfit = 180;                  // 止盈点数 0:不使用
 
 input group "过滤参数";
 input bool UseFilter = true;                      // 是否使用过滤
-input int FastEMAValue = 24;                      // FastEMA
-input ENUM_TIMEFRAMES FastEMAPeriod = PERIOD_M20; // FastEMA周期
+input int FastEMAValue = 8;                      // FastEMA
+input ENUM_TIMEFRAMES FastEMAPeriod = PERIOD_H1; // FastEMA周期
 input int SlowEMAValue = 100;                     // SlowEMA
 input ENUM_TIMEFRAMES SlowEMAPeriod = PERIOD_H4;  // SlowEMA周期
 
