@@ -146,9 +146,9 @@ double CTools::CalcLots( double et, double sl, double slParam)
     double slMoney = 0;
     slMoney = AccountInfoDouble(ACCOUNT_BALANCE) * slParam / 100.0;
     // 计算止损距离
-    long digits = SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
+    int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
 
-    double slDistance = NormalizeDouble(MathAbs(et - sl), (int)digits) / Point();
+    double slDistance = NormalizeDouble(MathAbs(et - sl), digits) / Point();
 
     if (slDistance <= 0)
         return 0;
