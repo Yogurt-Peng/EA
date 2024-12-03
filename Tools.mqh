@@ -13,7 +13,7 @@ private:
 
 
 public:
-    CTools(string symbol, CTrade *trade,CPositionInfo *positionInfo, COrderInfo *orderInfo);
+    CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo);
     ~CTools();
     bool IsNewBar(ENUM_TIMEFRAMES timeframe);
     // 移动推损
@@ -30,12 +30,12 @@ public:
 
 };
 
-CTools::CTools(string symbol, CTrade *trade, CPositionInfo *positionInfo, COrderInfo *orderInfo)
+CTools::CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
 {
     m_symbol = symbol;
-    m_trade = trade;
-    m_positionInfo = positionInfo;
-    m_orderInfo = *orderInfo;
+    m_trade = _trade;
+    m_positionInfo = _positionInfo;
+    m_orderInfo = *_orderInfo;
 }
 CTools::~CTools()
 {
