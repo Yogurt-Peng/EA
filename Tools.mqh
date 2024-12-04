@@ -8,17 +8,16 @@ private:
     CTrade *m_trade;
     CPositionInfo *m_positionInfo;
     COrderInfo m_orderInfo;
-    datetime m_prevBarTime ;
-
+    datetime m_prevBarTime;
 
 public:
-    CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo);
+    CTools(string symbol, CTrade *_trade, CPositionInfo *_positionInfo, COrderInfo *_orderInfo);
     ~CTools();
     bool IsNewBar(ENUM_TIMEFRAMES timeframe);
     // 盈亏衡
-    void ApplyBreakEven(int triggerPPoints, int movePoints,long magicNum);
+    void ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum);
     // 关闭所有订单
-    void CloseAllPositions( long magicNum);
+    void CloseAllPositions(long magicNum);
     // 删除所有挂单
     void DeleteAllOrders(long magicNum);
     // 获取当前持仓数量
@@ -26,20 +25,18 @@ public:
     // 获取当前挂单数量
     int GetOrderCount(long magicNum);
     // 计算手数
-    double CalcLots( double et, double sl, double slParam);
+    double CalcLots(double et, double sl, double slParam);
     // 追踪止损
-    void CTools::ApplyTrailingStop(int distancePoints);
-
-
+    void ApplyTrailingStop(int distancePoints, long magicNum);
 };
 
-CTools::CTools(string _symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
+CTools::CTools(string _symbol, CTrade *_trade, CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
 {
     m_symbol = _symbol;
     m_trade = _trade;
     m_positionInfo = _positionInfo;
     m_orderInfo = _orderInfo;
-    m_prevBarTime=INT_MIN;
+    m_prevBarTime = INT_MIN;
 }
 CTools::~CTools()
 {
@@ -62,7 +59,7 @@ void CTools::ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum)
 {
     for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
-        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Magic() == magicNum)
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Magic() == magicNum && m_positionInfo.Symbol() == m_symbol)
         {
             ulong tick = m_positionInfo.Ticket();
             long type = m_positionInfo.PositionType();
@@ -96,12 +93,72 @@ void CTools::ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum)
     }
 }
 
-void CTools::ApplyTrailingStop(int distancePoints) 
+void CTools::ApplyTrailingStop(int distancePoints, long magicNum)
 {
-    for (int i = 0; i < PositionsTotal(); i++)
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
+        {
+            ulong tick = m_positionInfo.Ticket();
+            long type = m_positionInfo.PositionType();
+            double Pos_Open = m_positionInfo.PriceOpen();
+            double Pos_Curr = m_positionInfo.PriceCurrent();
+            double Pos_TP = m_positionInfo.TakeProfit();
+            double Pos_SL = m_positionInfo.StopLoss();
 
+            double profitPoints = 0;  // 当前盈利点数
+            double moveStopLevel = 0; // 新的止损位置
 
+            if (type == POSITION_TYPE_BUY)
+            {
+
+                moveStopLevel=INT_MIN;
+                profitPoints = (Pos_Curr - Pos_Open) / _Point;
+
+                if (profitPoints >= distancePoints && Pos_SL < Pos_Open)
+                {
+                    // 盈利达到 distancePoints 且止损小于开仓价时，将止损移动到开仓价
+                    moveStopLevel = Pos_Open;
+                }
+                else if (profitPoints >= 2 * distancePoints)
+                {
+                    // 盈利达到 2 倍 distancePoints，将止损移动到当前价格 - distancePoints
+                    moveStopLevel = Pos_Curr - distancePoints * Point();
+                }
+
+                if (moveStopLevel > Pos_SL) // 确保止损只向上移动
+                {
+                    if (!m_trade.PositionModify(tick, moveStopLevel, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+            }
+            else if (type == POSITION_TYPE_SELL)
+            {
+
+                moveStopLevel=INT_MAX;
+
+                profitPoints = (Pos_Open - Pos_Curr) / _Point;
+
+                if (profitPoints >= distancePoints && Pos_SL > Pos_Open)
+                {
+                    // 盈利达到 distancePoints 且止损高于开仓价时，将止损移动到开仓价
+                    moveStopLevel = Pos_Open;
+                }
+                else if (profitPoints >= 2 * distancePoints)
+                {
+                    // 盈利达到 2 倍 distancePoints，将止损移动到当前价格 + distancePoints
+                    moveStopLevel = Pos_Curr + distancePoints * Point();
+                }
+
+                if (moveStopLevel < Pos_SL) // 确保止损只向下移动
+                {
+                    if (!m_trade.PositionModify(tick, moveStopLevel, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+            }
+        }
     }
 }
 
@@ -159,7 +216,7 @@ int CTools::GetPositionCount(long magicNum)
 }
 
 // 进厂价格，止损价格，账户余额的百分数
-double CTools::CalcLots( double et, double sl, double slParam)
+double CTools::CalcLots(double et, double sl, double slParam)
 {
     double slMoney = 0;
     slMoney = AccountInfoDouble(ACCOUNT_BALANCE) * slParam / 100.0;

@@ -22,6 +22,9 @@ input bool PriceProtection = true; // 是否启用价格保护
 input int TriggerPoints = 50;      // 触发点数
 input int MovePoints = 20;         // 移动点数
 
+input bool TrailingStop = true; // 是否启追踪止损
+input int TrailingStopPoints = 50; // 追踪止损点数
+
 //+------------------------------------------------------------------+
 int handleFastEMA;
 int handleSlowEMA;
@@ -56,6 +59,9 @@ void OnTick()
     // 一分钟内只执行一次 提高效率
     if (!tools.IsNewBar(PERIOD_M1))
         return;
+
+    if(TrailingStop)
+        tools.ApplyTrailingStop( TrailingStopPoints,MagicNumber);
 
     if (PriceProtection)
         tools.ApplyBreakEven(TriggerPoints, MovePoints,MagicNumber);
