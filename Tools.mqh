@@ -15,8 +15,8 @@ public:
     CTools(string symbol, CTrade *_trade,CPositionInfo *_positionInfo, COrderInfo *_orderInfo);
     ~CTools();
     bool IsNewBar(ENUM_TIMEFRAMES timeframe);
-    // 移动推损
-    void ApplyBreakEven(int triggerPPoints, int movePoints);
+    // 盈亏衡
+    void ApplyBreakEven(int triggerPPoints, int movePoints,long magicNum);
     // 关闭所有订单
     void CloseAllPositions( long magicNum);
     // 删除所有挂单
@@ -27,6 +27,8 @@ public:
     int GetOrderCount(long magicNum);
     // 计算手数
     double CalcLots( double et, double sl, double slParam);
+    // 追踪止损
+    void CTools::ApplyTrailingStop(int distancePoints);
 
 
 };
@@ -56,37 +58,53 @@ bool CTools::IsNewBar(ENUM_TIMEFRAMES timeframe)
     return false;
 }
 
-void CTools::ApplyBreakEven(int triggerPPoints, int movePoints)
+void CTools::ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum)
 {
-
-    for (int i = 0; i < PositionsTotal(); i++)
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
-        ulong tick =PositionGetTicket(i);
-        long type =PositionGetInteger(POSITION_TYPE);
-        long magic = PositionGetInteger(POSITION_MAGIC);
-
-        double Pos_Open = PositionGetDouble(POSITION_PRICE_OPEN), Pos_Curr = PositionGetDouble(POSITION_PRICE_CURRENT);
-        double Pos_TP = PositionGetDouble(POSITION_TP), Pos_SL = PositionGetDouble(POSITION_SL);
-
-        double distance = 0;
-        if (type == POSITION_TYPE_BUY)
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Magic() == magicNum)
         {
-            distance = (Pos_Curr - Pos_Open) / _Point;
-            if (distance >= triggerPPoints && Pos_SL < Pos_Open)
+            ulong tick = m_positionInfo.Ticket();
+            long type = m_positionInfo.PositionType();
+            double Pos_Open = m_positionInfo.PriceOpen();
+            double Pos_Curr = m_positionInfo.PriceCurrent();
+            double Pos_TP = m_positionInfo.TakeProfit();
+            double Pos_SL = m_positionInfo.StopLoss();
+
+            double distance = 0;
+            if (type == POSITION_TYPE_BUY)
             {
-                m_trade.PositionModify(tick, Pos_Open + movePoints * Point(), Pos_TP);
+                distance = (Pos_Curr - Pos_Open) / _Point;
+                if (distance >= triggerPPoints && Pos_SL < Pos_Open)
+                {
+                    if (!m_trade.PositionModify(tick, Pos_Open + movePoints * Point(), Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
             }
-        }
-        else if (type == POSITION_TYPE_SELL)
-        {
-            distance = (Pos_Open - Pos_Curr) / _Point;
-            if (distance >= triggerPPoints && Pos_SL > Pos_Open)
+            else if (type == POSITION_TYPE_SELL)
             {
-                m_trade.PositionModify(tick, Pos_Open - movePoints * Point(), Pos_TP);
+                distance = (Pos_Open - Pos_Curr) / _Point;
+                if (distance >= triggerPPoints && Pos_SL > Pos_Open)
+                {
+                    if (!m_trade.PositionModify(tick, Pos_Open - movePoints * Point(), Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
             }
         }
     }
 }
+
+void CTools::ApplyTrailingStop(int distancePoints) 
+{
+    for (int i = 0; i < PositionsTotal(); i++)
+    {
+
+
+    }
+}
+
 
 void CTools::CloseAllPositions(long magicNum)
 {

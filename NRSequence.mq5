@@ -58,7 +58,7 @@ void OnTick()
         return;
 
     if (PriceProtection)
-        tools.ApplyBreakEven(TriggerPoints, MovePoints);
+        tools.ApplyBreakEven(TriggerPoints, MovePoints,MagicNumber);
 
     if (tools.GetPositionCount(MagicNumber) > 0)
         return;
