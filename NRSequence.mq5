@@ -5,22 +5,22 @@ input int MagicNumber = 4753;                // EA编号
 input int NarrowRangeCount = 7;              // NRNumber
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_M5; // NRNumber周期
 input int LotType = 1;                       // 1:固定手数,2:固定百分比
-input double LotSize = 0.01;                  // 手数
+input double LotSize = 0.01;                 // 手数
 input double Percent = 1;                    // 百分比 1%
 input int StopLoss = 220;                    // 止损点数 0:不使用
 input int TakeProfit = 180;                  // 止盈点数 0:不使用
 
 input group "过滤参数";
-input bool UseFilter = true;                      // 是否使用过滤
+input bool UseFilter = true;                     // 是否使用过滤
 input int FastEMAValue = 8;                      // FastEMA
 input ENUM_TIMEFRAMES FastEMAPeriod = PERIOD_H1; // FastEMA周期
-input int SlowEMAValue = 100;                     // SlowEMA
-input ENUM_TIMEFRAMES SlowEMAPeriod = PERIOD_H4;  // SlowEMA周期
+input int SlowEMAValue = 100;                    // SlowEMA
+input ENUM_TIMEFRAMES SlowEMAPeriod = PERIOD_H4; // SlowEMA周期
 
 input group "价格保护";
 input bool PriceProtection = true; // 是否启用价格保护
 input int TriggerPoints = 50;      // 触发点数
-input int MovePoints = 30;         // 移动点数
+input int MovePoints = 20;         // 移动点数
 
 //+------------------------------------------------------------------+
 int handleFastEMA;
@@ -131,6 +131,5 @@ bool IsNRSequence()
 
     return true;
 };
-
 
 //+------------------------------------------------------------------+

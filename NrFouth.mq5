@@ -1,7 +1,5 @@
 
-#include <Trade\Trade.mqh>
-#include <Trade\PositionInfo.mqh>
-#include <TRade\OrderInfo.mqh>
+#include <Trade/Trade.mqh>
 
 // 趋势形策略
 
@@ -183,7 +181,7 @@ double CalcLots(string symbol, double et, double sl, int slType, double slParam)
     if(slType==1) slMoney = AccountInfoDouble(ACCOUNT_BALANCE) * slParam / 100;
 
     // 计算止损距离
-    int digits = SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
     double slDistance = NormalizeDouble(MathAbs(et - sl), digits) / Point();
     if(slDistance <= 0) return 0;
 
