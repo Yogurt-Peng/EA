@@ -1,7 +1,7 @@
 #include "Tools.mqh"
 input group "基本参数";
 input int MagicNumber = 8885;                     // EA编号
-input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // NRNumber周期
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 input int LotType = 1;                            // 1:固定手数,2:固定百分比
 input double LotSize = 0.01;                      // 手数
 input double Percent = 1;                         // 百分比 1%
@@ -14,6 +14,8 @@ input int FastEMAValue = 9;                           // FastEMA
 input ENUM_TIMEFRAMES FastEMAPeriod = PERIOD_CURRENT; // FastEMA周期
 input int ATRValue = 14;                              // ATR
 input ENUM_TIMEFRAMES ATRPeriod = PERIOD_CURRENT;     // ATR周期
+input int RSIValue = 14;                              // RSI
+input ENUM_TIMEFRAMES RSIPeriod = PERIOD_CURRENT; // RSI周期
 
 //+------------------------------------------------------------------+
 
@@ -35,7 +37,7 @@ int OnInit()
 {
     handleFastEMA = iMA(_Symbol, FastEMAPeriod, FastEMAValue, 0, MODE_EMA, PRICE_CLOSE);
     handleATR = iATR(_Symbol, ATRPeriod, ATRValue);
-    handleRSI = iRSI(_Symbol, TimeFrame, 14, PRICE_CLOSE);
+    handleRSI = iRSI(_Symbol, RSIPeriod, RSIValue, PRICE_CLOSE);
 
     trade.SetExpertMagicNumber(MagicNumber);
     ArraySetAsSeries(FastEMAValueBuffer, true);
@@ -46,14 +48,19 @@ int OnInit()
     return INIT_SUCCEEDED;
 }
 
+
+datetime orderTime;
+
 void OnTick()
 {
-
+    
     if (!tools.IsNewBar(PERIOD_CURRENT))
         return;
-    if (tools.GetPositionCount(MagicNumber) > 0)
+        
+    if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
     {
         tools.CloseAllPositions(MagicNumber);
+        orderTime=0;
     }
 
     SIGN sign = IsClassification();
@@ -64,7 +71,7 @@ void OnTick()
         double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
         double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
         trade.Buy(LotSize, _Symbol, ask);
-
+        orderTime=iTime(_Symbol, TimeFrame,1);
         // double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
         // double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
@@ -77,7 +84,9 @@ void OnTick()
 
         double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
         double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
-        trade.Sell(LotSize, _Symbol, bid, sellSl, sellTp);
+        trade.Sell(LotSize, _Symbol, bid);
+        orderTime=iTime(_Symbol, TimeFrame,1);
+
     }
 }
 void OnDeinit(const int reason)
@@ -102,12 +111,13 @@ SIGN IsClassification()
     CopyBuffer(handleFastEMA, 0, 0, 4, FastEMAValueBuffer);
     CopyBuffer(handleRSI, 0, 0, 2, RSIValueBuffer);
 
-    if(RSIValueBuffer[0]>40)
-         return NONE;
-
     // 是否连续下跌
-    if (FastEMAValueBuffer[0] < FastEMAValueBuffer[1] && FastEMAValueBuffer[2] < FastEMAValueBuffer[3] )
+    if (FastEMAValueBuffer[0] < FastEMAValueBuffer[1] && FastEMAValueBuffer[2] < FastEMAValueBuffer[3])
     {
+
+        if (RSIValueBuffer[0] > 40)
+            return NONE;
+
         // 第一根线为阴线的实体要占振幅的1/2 振幅大于ATR
         if (rates[2].open < rates[2].close)
             return NONE;
@@ -130,13 +140,46 @@ SIGN IsClassification()
             return NONE;
         if (rates[0].high - rates[0].low <= ATRValueBuffer[0])
             return NONE;
-
         // 均线下方  1:收盘价小于均线 2:最高价小于均线 3:收盘价小于均线  || rates[0].close >= FastEMAValueBuffer[0]
         if (rates[2].close >= FastEMAValueBuffer[0] || rates[1].high >= FastEMAValueBuffer[0])
             return NONE;
+        return BUY;
+    }
+    else if (FastEMAValueBuffer[0] > FastEMAValueBuffer[1] && FastEMAValueBuffer[2] > FastEMAValueBuffer[3])
+    {
 
-         return BUY;
+        if (RSIValueBuffer[0] < 60)
+            return NONE;
+
+        // 第一根线为阴线的实体要占振幅的1/2 振幅大于ATR
+        if (rates[2].open > rates[2].close)
+            return NONE;
+
+        if ((rates[2].close - rates[2].open) / (rates[2].high - rates[2].low) < 0.5)
+            return NONE;
+
+        if (rates[2].high - rates[2].low <= ATRValueBuffer[0])
+            return NONE;
+
+        // 最低价要低于第一根线的最低价 ，最高价小于第一  下
+        if (rates[1].low <= rates[2].low)
+            return NONE;
+
+        if (rates[1].high <= rates[2].high)
+            return NONE;
+
+        // 第三根线为阳线，实体要占振幅的1/2，振幅大于ATR
+        if (rates[0].open < rates[0].close)
+            return NONE;
+        if ((rates[0].open - rates[0].close) / (rates[0].high - rates[0].low) < 0.5)
+            return NONE;
+        if (rates[0].high - rates[0].low <= ATRValueBuffer[0])
+            return NONE;
+        // 均线下方  1:收盘价小于均线 2:最高价小于均线 3:收盘价小于均线  || rates[0].close >= FastEMAValueBuffer[0]
+        if (rates[2].close <= FastEMAValueBuffer[0] || rates[1].high <= FastEMAValueBuffer[0])
+            return NONE;
+        return SELL;
     }
 
-   return NONE;
+    return NONE;
 };
