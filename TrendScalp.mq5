@@ -2,20 +2,18 @@
 input group "基本参数";
 input int MagicNumber = 7456;                     // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
-input int LotType = 1;                            // 1:固定手数,2:固定百分比
+input int LotType = 2;                            // 1:固定手数,2:固定百分比
 input double LotSize = 0.01;                      // 手数
 input double Percent = 1;                         // 百分比 1%
-input int StopLoss = 120;                         // 止损点数 0:不使用
+input int StopLoss = 100;                         // 止损点数 0:不使用
 
 input group "过滤参数";
 input int ATRValue = 14;                          // ATR
 input ENUM_TIMEFRAMES ATRPeriod = PERIOD_CURRENT; // ATR周期
-input double AmplitudeRatio = 0.2;                // 幅度比例
-input bool IsTrailing = false;                     // 是否追踪止损
+input double AmplitudeRatio = 0.4;                // 幅度比例
+input bool IsTrailing = true;                     // 是否追踪止损
 input int TrailingStopPoints = 10;                // 追踪止损点数
 
-input int FastEMAValue = 8;                      // FastEMA
-input ENUM_TIMEFRAMES FastEMAPeriod = PERIOD_H1; // FastEMA周期
 
 //+------------------------------------------------------------------+
 
@@ -28,9 +26,6 @@ int handleATR;
 double ATRValueBuffer[];
 
 
-int handleFastEMA;
-
-double FastEMAValueBuffer[];
 //+------------------------------------------------------------------+
 
 int OnInit()
@@ -38,9 +33,6 @@ int OnInit()
 
     handleATR = iATR(_Symbol, ATRPeriod, ATRValue);
     ArraySetAsSeries(ATRValueBuffer, true);
-
-    handleFastEMA = iMA(_Symbol, FastEMAPeriod, FastEMAValue, 0, MODE_EMA, PRICE_CLOSE);
-    ArraySetAsSeries(FastEMAValueBuffer, true);
 
 
     trade.SetExpertMagicNumber(MagicNumber);
@@ -55,18 +47,14 @@ void OnTick()
     if(IsTrailing)
         tools.ApplyTrailingStop(TrailingStopPoints, MagicNumber);
 
-
     if (!tools.IsNewBar(PERIOD_CURRENT))
         return;
 
-
-    if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
-    {
-        tools.CloseAllPositions(MagicNumber);
-        orderTime=0;
-    }
-
-
+    // if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
+    // {
+    //     tools.CloseAllPositions(MagicNumber);
+    //     orderTime=0;
+    // }
 
     if (tools.GetPositionCount(MagicNumber) > 0)
         return;
@@ -77,7 +65,7 @@ void OnTick()
         double open=iOpen(_Symbol, TimeFrame, 1);
         double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
         double lots = (LotType == 1) ? LotSize : tools.CalcLots(ask, buySl, Percent);
-        trade.Buy(lots, _Symbol, ask, open);
+        trade.Buy(lots, _Symbol, ask, buySl);
         orderTime = iTime(_Symbol, TimeFrame, 1);
     }
     else if (IsShort())
@@ -86,7 +74,7 @@ void OnTick()
         double open=iOpen(_Symbol, TimeFrame, 1);
         double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
         double lots = (LotType == 1) ? LotSize : tools.CalcLots(bid, sellSl, Percent);
-        trade.Sell(lots, _Symbol, bid, open);
+        trade.Sell(lots, _Symbol, bid, sellSl);
         orderTime = iTime(_Symbol, TimeFrame, 1);
     }
 }
@@ -101,7 +89,6 @@ bool IsShort()
     MqlRates rates[];
     CopyRates(_Symbol, TimeFrame, 1, 1, rates);
     CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
-    CopyBuffer(handleFastEMA, 0, 0, 1, FastEMAValueBuffer);
 
     // if(rates[0].high > FastEMAValueBuffer[0])
     //     return false;
@@ -130,7 +117,6 @@ bool IsLong()
     MqlRates rates[];
     CopyRates(_Symbol, TimeFrame, 1, 1, rates);
     CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
-    CopyBuffer(handleFastEMA, 0, 1, 1, FastEMAValueBuffer);
 
 
     // if(rates[0].high < FastEMAValueBuffer[0])

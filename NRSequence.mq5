@@ -4,7 +4,7 @@ input group "基本参数";
 input int MagicNumber = 4753;                // EA编号
 input int NarrowRangeCount = 7;              // NRNumber
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_M5; // NRNumber周期
-input int LotType = 1;                       // 1:固定手数,2:固定百分比
+input int LotType = 2;                       // 1:固定手数,2:固定百分比
 input double LotSize = 0.01;                 // 手数
 input double Percent = 1;                    // 百分比 1%
 input int StopLoss = 220;                    // 止损点数 0:不使用
@@ -22,8 +22,7 @@ input bool PriceProtection = true; // 是否启用价格保护
 input int TriggerPoints = 50;      // 触发点数
 input int MovePoints = 20;         // 移动点数
 
-input bool TrailingStop = false; // 是否启追踪止损
-input int TrailingStopPoints = 50; // 追踪止损点数
+
 
 //+------------------------------------------------------------------+
 int handleFastEMA;
@@ -59,9 +58,6 @@ void OnTick()
     // 一分钟内只执行一次 提高效率
     if (!tools.IsNewBar(PERIOD_M1))
         return;
-
-    if(TrailingStop)
-        tools.ApplyTrailingStop( TrailingStopPoints,MagicNumber);
 
     if (PriceProtection)
         tools.ApplyBreakEven(TriggerPoints, MovePoints,MagicNumber);
