@@ -4,13 +4,13 @@ input int MagicNumber = 7456;                     // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 input double LotSize = 0.01;                      // 手数
 input int StopLoss = 100;                         // 止损点数 0:不使用
-input int TakeProfit = 100;                       // 止盈点数 0:不使用
 
 input group "过滤参数";
 input int ATRValue = 14;                          // ATR
 input ENUM_TIMEFRAMES ATRPeriod = PERIOD_CURRENT; // ATR周期
 input int EMAValue = 9;                           // EMA
 input ENUM_TIMEFRAMES EMAPeriod = PERIOD_CURRENT; // EMA周期
+input int TrailingStopPoints = 10; // 追踪止损点数
 
 //+------------------------------------------------------------------+
 
@@ -43,14 +43,11 @@ datetime orderTime;
 
 void OnTick()
 {
+
+    tools.ApplyTrailingStop(TrailingStopPoints, MagicNumber);
+
     if (!tools.IsNewBar(PERIOD_CURRENT))
         return;
-
-    if (tools.GetPositionCount(MagicNumber) > 0 && iTime(_Symbol, TimeFrame, 3) >= orderTime)
-    {
-        tools.CloseAllPositions(MagicNumber);
-        orderTime = 0;
-    }
 
     if (tools.GetPositionCount(MagicNumber) > 0)
         return;
@@ -58,13 +55,15 @@ void OnTick()
     if (IsLong())
     {
         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-        trade.Buy(LotSize, _Symbol, ask);
+        double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
+        trade.Buy(LotSize, _Symbol, ask, buySl);
         orderTime = iTime(_Symbol, TimeFrame, 1);
     }
     else if (IsShort())
     {
         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-        trade.Sell(LotSize, _Symbol, bid);
+        double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
+        trade.Sell(LotSize, _Symbol, bid,sellSl);
         orderTime = iTime(_Symbol, TimeFrame, 1);
     }
 }
@@ -90,7 +89,7 @@ bool IsShort()
         double lowerShadow = rates[0].close - rates[0].low; // 下影线
         double shadowSum = upperShadow + lowerShadow;       // 上下影线总和
         // 检查上下影线总和占振幅的比例是否小于等于 10%
-        if (shadowSum / amplitude <= 0.1 && amplitude > ATRValueBuffer[0]&& EMAValueBuffer[0] > rates[0].close)
+        if (shadowSum / amplitude <= 0.1 && amplitude > ATRValueBuffer[0])
         {
             return true;
         }
@@ -116,7 +115,7 @@ bool IsLong()
         double shadowSum = upperShadow + lowerShadow;        // 上下影线总和
 
         // 检查上下影线总和占振幅的比例是否小于等于 10%
-        if (shadowSum / amplitude <= 0.1 && amplitude > ATRValueBuffer[0] && EMAValueBuffer[0] < rates[0].close)
+        if (shadowSum / amplitude <= 0.1 && amplitude > ATRValueBuffer[0] )
         {
             return true;
         }
