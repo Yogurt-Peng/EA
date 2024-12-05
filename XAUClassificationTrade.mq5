@@ -6,6 +6,8 @@ input double LotSize = 0.01;                      // 手数
 input int StopLoss = 100;                         // 止损点数 0:不使用
 input int TakeProfit = 100;                       // 止盈点数 0:不使用
 
+
+
 //+------------------------------------------------------------------+
 
 CTrade trade;
@@ -13,10 +15,16 @@ COrderInfo orderInfo;
 CPositionInfo positionInfo;
 CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
 
+
+
+
 //+------------------------------------------------------------------+
 
 int OnInit()
 {
+
+
+
     trade.SetExpertMagicNumber(MagicNumber);
     Print("🚀🚀🚀 初始化成功");
     return INIT_SUCCEEDED;
