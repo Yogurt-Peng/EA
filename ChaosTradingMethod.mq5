@@ -7,9 +7,9 @@ input int StopLoss = 100;                         // 止损点数 0:不使用
 input int TakeProfit = 100;                       // 止盈点数 0:不使用
 
 input group "指标参数";
-input bool UseFractal = true; // 鳄鱼线
-input bool UseJaws1 = true;   // 分型
-input bool UseJaws2 = true;   // 分型
+input bool UseFractal = true; // 分型
+input bool UseJaws1 = true;   // 鳄鱼线1
+input bool UseJaws2 = true;   // 鳄鱼线2
 input bool UseAC = true;      // 加速
 
 //+------------------------------------------------------------------+
@@ -128,19 +128,94 @@ void OnTick()
 
     if (tools.IsNewBar(TimeFrame))
     {
-        bool sell = false;
-        bool buy = false;
+
+        // 分型
+        bool sigSell = false;
+        bool sigBuy = false;
         if (UseFractal)
         {
             if (bufferFractalsUp[0] != EMPTY_VALUE)
-                sell = true;
+                sigSell = true;
             if (bufferFractalsDown[0] != EMPTY_VALUE)
-                buy = true;
+                sigBuy = true;
         }
         else
         {
-            sell = false;
-            buy = false;
+            sigSell = false;
+            sigBuy = false;
+        }
+        // 鳄鱼线
+        bool sigJawBuy1 = false;
+        bool sigJawSell1 = false;
+        if (UseJaws1)
+        {
+            if (iClose(_Symbol, TimeFrame, 1) > bufferAlligatorJaws[1])
+                sigJawBuy1 = true;
+            if (iClose(_Symbol, TimeFrame, 1) < bufferAlligatorJaws[1])
+                sigJawSell1 = true;
+        }
+        else
+        {
+            sigJawBuy1 = true;
+            sigJawSell1 = true;
+        }
+
+        bool sigJawBuy2 = false;
+        bool sigJawSell2 = false;
+        if (UseJaws2)
+        {   
+            if (iClose(_Symbol, TimeFrame, 2) < bufferAlligatorJaws[2] && iClose(_Symbol, TimeFrame, 1) > bufferAlligatorJaws[1])
+                sigJawBuy2 = true;
+            if (iClose(_Symbol, TimeFrame, 2) > bufferAlligatorJaws[2] && iClose(_Symbol, TimeFrame, 1) < bufferAlligatorJaws[1])
+                sigJawSell2 = true;
+        }
+        else
+        {
+            sigJawBuy2 = true;
+            sigJawSell2 = true;
+        }
+
+        // AO
+        bool sigAOBuy = bufferAO[1] > 0 && bufferAO[2] < 0;
+        bool sigAOSell = bufferAO[1] < 0 && bufferAO[2] > 0;
+
+        // AC
+        bool sigAcBuy = false;
+        bool sigAcSell = false;
+        if (UseAC)
+        {
+            if (bufferAC[1] == 0)
+                sigAcBuy = true;
+            if (bufferAC[1] == 1)
+                sigAcSell = true;
+        }
+        else
+        {
+            sigAcBuy = true;
+            sigAcSell = true;
+        }
+
+        if (sigBuy && sigJawBuy1 && sigJawBuy2 && sigAcBuy && sigAOBuy)
+        {
+            trade.Buy(LotSize);
+        }
+
+        if (sigSell && sigJawSell1 && sigJawSell2 && sigAcSell && sigAOSell)
+        {
+            trade.Sell(LotSize);
+        }
+
+        if (sigAOSell)
+        {
+            Print("close all buy");
+            tools.CloseAllPositions(MagicNumber, POSITION_TYPE_BUY);
+        }
+
+        if (sigAOBuy)
+        {
+            Print("close all sell");
+            tools.CloseAllPositions(MagicNumber, POSITION_TYPE_SELL);
+
         }
     }
 }
