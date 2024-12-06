@@ -59,7 +59,8 @@ void OnTick()
         
     if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
     {
-        tools.CloseAllPositions(MagicNumber);
+        tools.CloseAllPositions(MagicNumber,POSITION_TYPE_BUY);
+        tools.CloseAllPositions(MagicNumber,POSITION_TYPE_SELL);
         orderTime=0;
     }
 
