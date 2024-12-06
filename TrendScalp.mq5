@@ -57,20 +57,17 @@ void OnTick()
     if (tools.GetPositionCount(MagicNumber) > 0)
         return;
 
+    CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
+    double sl_tp = ATRValueBuffer[0] * 3 * 100;
+
     switch (GetTradeSignal())
     {
     case 1:
     {
 
-        CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
-
-        double sl_tp = ATRValueBuffer[0]*5 * 100;
-
         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-
         // double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
         // double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
-        sl_tp=1000;
         double buySl = (StopLoss == 0) ? 0 : ask - sl_tp* _Point;
         double buyTp = (TakeProfit == 0) ? 0 : ask + sl_tp* _Point;
 
@@ -81,10 +78,7 @@ void OnTick()
     }
     case -1:
     {
-        CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
 
-        double sl_tp = ATRValueBuffer[0]*5 * 100;
-        sl_tp=1000;
         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         // double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
         // double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
@@ -92,7 +86,6 @@ void OnTick()
         double sellTp = (TakeProfit == 0) ? 0 : bid - sl_tp* _Point;
 
         double lots = (LotType == 1) ? LotSize : tools.CalcLots(bid, sellSl, Percent);
-
 
         trade.Sell(lots, _Symbol, bid, sellSl, sellTp);
         orderTime = iTime(_Symbol, TimeFrame, 1);
@@ -111,21 +104,20 @@ void OnDeinit(const int reason)
 int GetTradeSignal()
 {
     MqlRates rates[];
-    CopyRates(_Symbol, TimeFrame, 1, 3, rates);
+    CopyRates(_Symbol, TimeFrame, 1, 4, rates);
     CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
-    
 
     double amplitude = rates[0].high - rates[0].low; // 振幅
     double upperShadow;
     double lowerShadow;
     double shadowSum;
 
-    if (rates[0].close > rates[0].open &&rates[1].close > rates[1].open&&rates[2].close > rates[2].open) // 阳线
+    if (rates[0].close > rates[0].open && rates[1].close > rates[1].open && rates[2].close > rates[2].open&& rates[3].close > rates[3].open) // 阳线
     {
         upperShadow = rates[0].high - rates[0].close; // 上影线
         lowerShadow = rates[0].open - rates[0].low;   // 下影线
     }
-    else if (rates[0].close < rates[0].open&&rates[1].close < rates[1].open&&rates[2].close < rates[2].open) // 阴线
+    else if (rates[0].close < rates[0].open && rates[1].close < rates[1].open && rates[2].close < rates[2].open && rates[3].close < rates[3].open) // 阴线
     {
         upperShadow = rates[0].high - rates[0].open; // 上影线
         lowerShadow = rates[0].close - rates[0].low; // 下影线
