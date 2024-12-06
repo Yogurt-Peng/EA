@@ -1,3 +1,4 @@
+// 趋势型策略，关键是波动幅度与ema过滤
 #include "Tools.mqh"
 input group "基本参数";
 input int MagicNumber = 1756;                     // EA编号
@@ -16,6 +17,7 @@ input int MovePoints = 20;         // 移动点数
 input group "过滤参数";
 input bool UseFilter = true; // 是否使用过滤
 input int EMAValue = 200;    // FastEMA
+input double Amplitude = 0.02; // 波动幅度
 
 //+------------------------------------------------------------------+
 
@@ -144,10 +146,10 @@ SIGN EMAFilter()
 SIGN AmplitudeFilter()
 {
     CopyBuffer(handleTrix, 0, 1, 2, bufferTrixValue);
-    if (bufferTrixValue[1] >= 0.02)
+    if (bufferTrixValue[1] >=Amplitude)
         return SELL;
 
-    if (bufferTrixValue[1] <= -0.02)
+    if (bufferTrixValue[1] <= -Amplitude)
         return BUY;
 
     return NONE;
