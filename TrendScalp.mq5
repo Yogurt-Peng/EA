@@ -12,8 +12,15 @@ input group "过滤参数";
 input int ATRValue = 14;                          // ATR
 input ENUM_TIMEFRAMES ATRPeriod = PERIOD_CURRENT; // ATR周期
 input double AmplitudeRatio = 0.4;                // 幅度比例
-input bool IsTrailing = true;                     // 是否追踪止损
-input int TrailingStopPoints = 10;                // 追踪止损点数
+
+input group "追踪止损";
+input bool IsTrailing = true;      // 是否追踪止损
+input int TrailingStopPoints = 10; // 追踪止损点数
+
+input group "价格保护";
+input bool PriceProtection = true; // 是否启用价格保护
+input int TriggerPoints = 50;      // 触发点数
+input int MovePoints = 20;         // 移动点数
 
 //+------------------------------------------------------------------+
 
@@ -45,6 +52,9 @@ void OnTick()
     if (IsTrailing)
         tools.ApplyTrailingStop(TrailingStopPoints, MagicNumber);
 
+    if (PriceProtection)
+        tools.ApplyBreakEven(TriggerPoints, MovePoints, MagicNumber);
+
     if (!tools.IsNewBar(PERIOD_CURRENT))
         return;
 
@@ -68,8 +78,8 @@ void OnTick()
         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         // double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
         // double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
-        double buySl = (StopLoss == 0) ? 0 : ask - sl_tp* _Point;
-        double buyTp = (TakeProfit == 0) ? 0 : ask + sl_tp* _Point;
+        double buySl = (StopLoss == 0) ? 0 : ask - sl_tp * _Point;
+        double buyTp = (TakeProfit == 0) ? 0 : ask + sl_tp * _Point;
 
         double lots = (LotType == 1) ? LotSize : tools.CalcLots(ask, buySl, Percent);
         trade.Buy(lots, _Symbol, ask, buySl, buyTp);
@@ -82,8 +92,8 @@ void OnTick()
         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         // double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
         // double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
-        double sellSl = (StopLoss == 0) ? 0 : bid + sl_tp* _Point;
-        double sellTp = (TakeProfit == 0) ? 0 : bid - sl_tp* _Point;
+        double sellSl = (StopLoss == 0) ? 0 : bid + sl_tp * _Point;
+        double sellTp = (TakeProfit == 0) ? 0 : bid - sl_tp * _Point;
 
         double lots = (LotType == 1) ? LotSize : tools.CalcLots(bid, sellSl, Percent);
 
@@ -117,7 +127,7 @@ int GetTradeSignal()
         upperShadow = rates[0].high - rates[0].close; // 上影线
         lowerShadow = rates[0].open - rates[0].low;   // 下影线
     }
-    else if (rates[0].close < rates[0].open && rates[1].close < rates[1].open && rates[2].close < rates[2].open ) // 阴线
+    else if (rates[0].close < rates[0].open && rates[1].close < rates[1].open && rates[2].close < rates[2].open) // 阴线
     {
         upperShadow = rates[0].high - rates[0].open; // 上影线
         lowerShadow = rates[0].close - rates[0].low; // 下影线
