@@ -28,6 +28,8 @@ public:
     double CalcLots(double et, double sl, double slParam);
     // 追踪止损
     void ApplyTrailingStop(int distancePoints, long magicNum);
+    // 判断是否阳线
+    bool IsUpBar(MqlRates &rates);
 };
 
 CTools::CTools(string _symbol, CTrade *_trade, CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
@@ -249,3 +251,13 @@ double CTools::CalcLots(double et, double sl, double slParam)
 
     return lot;
 }
+
+bool CTools::IsUpBar(MqlRates &rates)
+{
+    if (rates.close >= rates.open)
+        return true;
+    else if( rates.close < rates.open)
+        return false;
+
+    return true;
+};
