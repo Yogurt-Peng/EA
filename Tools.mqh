@@ -113,7 +113,7 @@ void CTools::ApplyTrailingStop(int distancePoints, long magicNum)
             {
 
                 moveStopLevel=INT_MIN;
-                profitPoints = (Pos_Curr - Pos_Open) / _Point;
+                profitPoints =(Pos_SL < Pos_Open)? (Pos_Curr - Pos_Open) / _Point: (Pos_Curr - Pos_SL) / _Point;
 
                 if (profitPoints >= distancePoints && Pos_SL < Pos_Open)
                 {
@@ -138,7 +138,7 @@ void CTools::ApplyTrailingStop(int distancePoints, long magicNum)
 
                 moveStopLevel=INT_MAX;
 
-                profitPoints = (Pos_Open - Pos_Curr) / _Point;
+                profitPoints = (Pos_SL > Pos_Open)?(Pos_Open - Pos_Curr) / _Point:(Pos_SL-Pos_Curr) / _Point;
 
                 if (profitPoints >= distancePoints && Pos_SL > Pos_Open)
                 {
