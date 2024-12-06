@@ -1,10 +1,10 @@
+// 过滤条件多了交易笔数很少，无法取得概率优势
+
 #include "Tools.mqh"
 input group "基本参数";
 input int MagicNumber = 8885;                     // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
-input int LotType = 1;                            // 1:固定手数,2:固定百分比
 input double LotSize = 0.01;                      // 手数
-input double Percent = 1;                         // 百分比 1%
 input int StopLoss = 100;                         // 止损点数 0:不使用
 input int TakeProfit = 100;                       // 止盈点数 0:不使用
 
@@ -19,14 +19,20 @@ input ENUM_TIMEFRAMES RSIPeriod = PERIOD_CURRENT; // RSI周期
 
 //+------------------------------------------------------------------+
 
+
+
 int handleFastEMA;
 double FastEMAValueBuffer[];
 
 int handleATR;
-double ATRValueBuffer[];
+double bufferATRValue[];
 
 int handleRSI;
 double RSIValueBuffer[];
+
+int handleWPR; // 威廉姆斯指标
+double bufferWPRValue[];
+
 
 CTrade trade;
 COrderInfo orderInfo;
@@ -37,11 +43,13 @@ int OnInit()
 {
     handleFastEMA = iMA(_Symbol, FastEMAPeriod, FastEMAValue, 0, MODE_EMA, PRICE_CLOSE);
     handleATR = iATR(_Symbol, ATRPeriod, ATRValue);
-    handleRSI = iRSI(_Symbol, RSIPeriod, RSIValue, PRICE_CLOSE);
+    // handleRSI = iRSI(_Symbol, RSIPeriod, RSIValue, PRICE_CLOSE);
+    handleWPR = iWPR(_Symbol, TimeFrame, 14);
 
     trade.SetExpertMagicNumber(MagicNumber);
     ArraySetAsSeries(FastEMAValueBuffer, true);
-    ArraySetAsSeries(ATRValueBuffer, true);
+    ArraySetAsSeries(bufferWPRValue, true);
+    ArraySetAsSeries(bufferATRValue, true);
     ArraySetAsSeries(RSIValueBuffer, true);
     Print("🚀🚀🚀 初始化成功");
 
@@ -56,36 +64,39 @@ void OnTick()
     
     if (!tools.IsNewBar(PERIOD_CURRENT))
         return;
-        
-    if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
-    {
-        tools.CloseAllPositions(MagicNumber,POSITION_TYPE_BUY);
-        tools.CloseAllPositions(MagicNumber,POSITION_TYPE_SELL);
-        orderTime=0;
-    }
+
+
+    if (tools.GetPositionCount(MagicNumber) > 0)return;
+
+    // if (tools.GetPositionCount(MagicNumber) > 0 &&iTime(_Symbol, TimeFrame,3)==orderTime)
+    // {
+    //     tools.CloseAllPositions(MagicNumber,POSITION_TYPE_BUY);
+    //     tools.CloseAllPositions(MagicNumber,POSITION_TYPE_SELL);
+    //     orderTime=0;
+    // }
 
     SIGN sign = IsClassification();
 
+    CopyBuffer(handleATR, 0, 1, 1, bufferATRValue);
+    double Sl_Tp = bufferATRValue[0] * 3 * 1000;
+
+    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+    double buySl = (StopLoss == 0) ? ask - Sl_Tp * _Point: ask - StopLoss * _Point;
+    double buyTp = (TakeProfit == 0) ?ask + Sl_Tp * _Point: ask + TakeProfit * _Point;
+
+    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double sellSl = (StopLoss == 0) ? bid + Sl_Tp * _Point: bid + StopLoss * _Point;
+    double sellTp = (TakeProfit == 0) ? bid - Sl_Tp * _Point: bid - TakeProfit * _Point;
+
     if (sign == BUY)
     {
-        double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-        double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
-        double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
-        trade.Buy(LotSize, _Symbol, ask);
+        trade.Buy(LotSize, _Symbol, ask, buySl, buyTp);
         orderTime=iTime(_Symbol, TimeFrame,1);
-        // double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
-        // double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
-        // double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
-        // trade.Sell(LotSize, _Symbol, bid, sellSl, sellTp);
     }
     else if (sign == SELL)
     {
-        double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-        double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
-        double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
-        trade.Sell(LotSize, _Symbol, bid);
+        trade.Sell(LotSize, _Symbol, bid, sellSl, sellTp);
         orderTime=iTime(_Symbol, TimeFrame,1);
 
     }
@@ -104,83 +115,74 @@ enum SIGN
 
 SIGN IsClassification()
 {
-    MqlRates rates[];
-    CopyRates(_Symbol, TimeFrame, 1, 3, rates);
-    ArraySetAsSeries(rates, true);
 
-    CopyBuffer(handleATR, 0, 0, 1, ATRValueBuffer);
-    CopyBuffer(handleFastEMA, 0, 0, 4, FastEMAValueBuffer);
-    CopyBuffer(handleRSI, 0, 0, 2, RSIValueBuffer);
+    CopyBuffer(handleWPR, 0, 1, 3, bufferWPRValue);
 
-    // 是否连续下跌
-    if (FastEMAValueBuffer[0] < FastEMAValueBuffer[1] && FastEMAValueBuffer[2] < FastEMAValueBuffer[3])
+    if(IsTopClassification()&&(bufferWPRValue[2]>-20|| bufferWPRValue[1]>-20))
     {
-
-        if (RSIValueBuffer[0] > 40)
-            return NONE;
-
-        // 第一根线为阴线的实体要占振幅的1/2 振幅大于ATR
-        if (rates[2].open < rates[2].close)
-            return NONE;
-        if ((rates[2].open - rates[2].close) / (rates[2].high - rates[2].low) < 0.5)
-            return NONE;
-        if (rates[2].high - rates[2].low <= ATRValueBuffer[0])
-            return NONE;
-
-        // 最低价要低于第一根线的最低价 ，最高价小于第一  下
-        if (rates[1].low >= rates[2].low)
-            return NONE;
-
-        if (rates[1].high >= rates[2].high)
-            return NONE;
-
-        // 第三根线为阳线，实体要占振幅的1/2，振幅大于ATR
-        if (rates[0].open > rates[0].close)
-            return NONE;
-        if ((rates[0].close - rates[0].open) / (rates[0].high - rates[0].low) < 0.5)
-            return NONE;
-        if (rates[0].high - rates[0].low <= ATRValueBuffer[0])
-            return NONE;
-        // 均线下方  1:收盘价小于均线 2:最高价小于均线 3:收盘价小于均线  || rates[0].close >= FastEMAValueBuffer[0]
-        if (rates[2].close >= FastEMAValueBuffer[0] || rates[1].high >= FastEMAValueBuffer[0])
-            return NONE;
-        return BUY;
-    }
-    else if (FastEMAValueBuffer[0] > FastEMAValueBuffer[1] && FastEMAValueBuffer[2] > FastEMAValueBuffer[3])
-    {
-
-        if (RSIValueBuffer[0] < 60)
-            return NONE;
-
-        // 第一根线为阴线的实体要占振幅的1/2 振幅大于ATR
-        if (rates[2].open > rates[2].close)
-            return NONE;
-
-        if ((rates[2].close - rates[2].open) / (rates[2].high - rates[2].low) < 0.5)
-            return NONE;
-
-        if (rates[2].high - rates[2].low <= ATRValueBuffer[0])
-            return NONE;
-
-        // 最低价要低于第一根线的最低价 ，最高价小于第一  下
-        if (rates[1].low <= rates[2].low)
-            return NONE;
-
-        if (rates[1].high <= rates[2].high)
-            return NONE;
-
-        // 第三根线为阳线，实体要占振幅的1/2，振幅大于ATR
-        if (rates[0].open < rates[0].close)
-            return NONE;
-        if ((rates[0].open - rates[0].close) / (rates[0].high - rates[0].low) < 0.5)
-            return NONE;
-        if (rates[0].high - rates[0].low <= ATRValueBuffer[0])
-            return NONE;
-        // 均线下方  1:收盘价小于均线 2:最高价小于均线 3:收盘价小于均线  || rates[0].close >= FastEMAValueBuffer[0]
-        if (rates[2].close <= FastEMAValueBuffer[0] || rates[1].high <= FastEMAValueBuffer[0])
-            return NONE;
         return SELL;
+
+    }else if(IsBottomClassification()&&(bufferWPRValue[2]<-80|| bufferWPRValue[1]<-80))
+    {
+        return BUY;
     }
 
     return NONE;
 };
+
+bool IsTopClassification()
+{
+    MqlRates rates[];
+    CopyRates(_Symbol, TimeFrame, 1, 3, rates);
+    CopyBuffer(handleATR, 0, 1, 3, bufferATRValue);
+
+    ArraySetAsSeries(rates, true);
+
+    // 振幅都要大于ATR
+    if(rates[0].high-rates[0].low<bufferATRValue[0])return false;
+    if(rates[2].high-rates[2].low<bufferATRValue[2])return false;
+
+    // 左阳右阴
+    if(tools.IsUpBar(rates[0]))return false;
+    if(!tools.IsUpBar(rates[2]))return false;
+
+    // 实体要占振幅的1/2以上。
+    if ((rates[0].open - rates[0].close) / (rates[0].high - rates[0].low) < 0.5)return false;
+    if ((rates[2].close - rates[2].open) / (rates[2].high - rates[2].low) < 0.5)return false;
+
+    // 中间k线高点最高，低点最高
+    if(rates[1].high>rates[2].high && rates[1].high>rates[0].high && rates[1].low>rates[2].low && rates[1].low>rates[0].low)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool IsBottomClassification()
+{
+    MqlRates rates[];
+    CopyRates(_Symbol, TimeFrame, 1, 3, rates);
+    CopyBuffer(handleATR, 0, 1, 3, bufferATRValue);
+    ArraySetAsSeries(rates, true);
+
+    // 振幅都要大于ATR
+    if(rates[0].high-rates[0].low<bufferATRValue[0])return false;
+    if(rates[2].high-rates[2].low<bufferATRValue[2])return false;
+
+    // 左阳右阴
+    if(!tools.IsUpBar(rates[0]))return false;
+    if(tools.IsUpBar(rates[2]))return false;
+
+    // 实体要占振幅的1/2以上。
+    if ((rates[0].close - rates[0].open) / (rates[0].high - rates[0].low) < 0.5)return false;
+    if ((rates[2].open - rates[2].close) / (rates[2].high - rates[2].low) < 0.5)return false;
+
+    // 中间k线高点最低，低点最低
+    if(rates[1].high<rates[2].high && rates[1].high<rates[0].high && rates[1].low<rates[2].low && rates[1].low<rates[0].low)
+    {
+        return true;
+    }
+
+    return false;
+}
