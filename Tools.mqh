@@ -118,7 +118,7 @@ void CTools::ApplyTrailingStop(int distancePoints, long magicNum)
                 if (profitPoints >= distancePoints && Pos_SL < Pos_Open)
                 {
                     // 盈利达到 distancePoints 且止损小于开仓价时，将止损移动到开仓价
-                    moveStopLevel = Pos_Open+ distancePoints * Point();
+                    moveStopLevel = Pos_Open;
                 }
                 else if (profitPoints >= 2 * distancePoints)
                 {

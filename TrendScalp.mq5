@@ -58,7 +58,7 @@ void OnTick()
         return;
 
     CopyBuffer(handleATR, 0, 1, 1, ATRValueBuffer);
-    double sl_tp = ATRValueBuffer[0] * 3 * 100;
+    double sl_tp = ATRValueBuffer[0] * 2 * 100;
 
     switch (GetTradeSignal())
     {
@@ -112,12 +112,12 @@ int GetTradeSignal()
     double lowerShadow;
     double shadowSum;
 
-    if (rates[0].close > rates[0].open && rates[1].close > rates[1].open && rates[2].close > rates[2].open&& rates[3].close > rates[3].open) // 阳线
+    if (rates[0].close > rates[0].open && rates[1].close > rates[1].open && rates[2].close > rates[2].open) // 阳线
     {
         upperShadow = rates[0].high - rates[0].close; // 上影线
         lowerShadow = rates[0].open - rates[0].low;   // 下影线
     }
-    else if (rates[0].close < rates[0].open && rates[1].close < rates[1].open && rates[2].close < rates[2].open && rates[3].close < rates[3].open) // 阴线
+    else if (rates[0].close < rates[0].open && rates[1].close < rates[1].open && rates[2].close < rates[2].open ) // 阴线
     {
         upperShadow = rates[0].high - rates[0].open; // 上影线
         lowerShadow = rates[0].close - rates[0].low; // 下影线
