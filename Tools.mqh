@@ -18,6 +18,8 @@ public:
     void ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum);
     // 关闭所有订单
     void CloseAllPositions(long magicNum,ENUM_POSITION_TYPE type);
+    // 关闭所有订单
+    void CloseAllPositions(long magicNum);
     // 删除所有挂单
     void DeleteAllOrders(long magicNum);
     // 获取当前持仓数量
@@ -30,6 +32,9 @@ public:
     void ApplyTrailingStop(int distancePoints, long magicNum);
     // 判断是否阳线
     bool IsUpBar(MqlRates &rates);
+    //  获取所有订单总的亏损
+    double GetTotalProfit(long magicNum);
+
 };
 
 CTools::CTools(string _symbol, CTrade *_trade, CPositionInfo *_positionInfo, COrderInfo *_orderInfo)
@@ -180,6 +185,18 @@ void CTools::CloseAllPositions(long magicNum,ENUM_POSITION_TYPE type)
         }
     }
 }
+void CTools::CloseAllPositions(long magicNum)
+{
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
+        {
+            if (!m_trade.PositionClose(m_positionInfo.Ticket()))
+                Print(m_symbol, "|", magicNum, " 平仓失败, Return code=", m_trade.ResultRetcode(),
+                      ". Code description: ", m_trade.ResultRetcodeDescription());
+        }
+    }
+}
 
 
 
@@ -261,6 +278,24 @@ bool CTools::IsUpBar(MqlRates &rates)
 
     return true;
 };
+
+
+double CTools::GetTotalProfit(long magicNum)
+{
+    double totalProfit = 0;
+      for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
+        {
+            totalProfit+= m_positionInfo.Profit();
+        }
+
+    }
+
+    return totalProfit;
+};
+
+
 enum SIGN
 {
     BUY,

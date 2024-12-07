@@ -32,12 +32,6 @@ COrderInfo orderInfo;
 CPositionInfo positionInfo;
 CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
 
-enum SIGN
-{
-    BUY,
-    SELL,
-    NONE
-};
 
 //+------------------------------------------------------------------+
 
@@ -98,6 +92,8 @@ void OnTick()
     default:
         break;
     }
+
+    
 }
 
 void OnDeinit(const int reason)
