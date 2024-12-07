@@ -35,12 +35,6 @@ double bufferTrixValue[];
 double bufferSignalValue[];
 double bufferEMAValue[];
 
-enum SIGN
-{
-    BUY,
-    SELL,
-    NONE
-};
 
 //+------------------------------------------------------------------+
 

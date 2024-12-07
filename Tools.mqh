@@ -261,3 +261,9 @@ bool CTools::IsUpBar(MqlRates &rates)
 
     return true;
 };
+enum SIGN
+{
+    BUY,
+    SELL,
+    NONE
+};

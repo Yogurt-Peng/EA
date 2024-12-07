@@ -106,12 +106,6 @@ void OnDeinit(const int reason)
     Print("🚀🚀🚀 EA移除");
 }
 
-enum SIGN
-{
-    BUY,
-    SELL,
-    NONE
-};
 
 SIGN IsClassification()
 {
