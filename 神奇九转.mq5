@@ -50,13 +50,13 @@ void OnTick()
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
     int signal = Signal();
-    if (signal == 1 && cntBuy == 0 && Long) 
+    if (signal == 2 && cntBuy == 0 && Long) 
     {
         double sl = StoplossPoints == 0 ? 0 : ask - StoplossPoints * _Point;
         double tp = TakeProfitPoints == 0 ? 0 : ask + TakeProfitPoints * _Point;
         trade.Buy(Lots, _Symbol, ask, sl, tp, "BUY");
     }
-    else if (signal == 2 && cntSell == 0 && Short)
+    else if (signal == 1 && cntSell == 0 && Short)
     {
         double sl = StoplossPoints == 0 ? 0 : bid + StoplossPoints * _Point;
         double tp = TakeProfitPoints == 0 ? 0 : bid - TakeProfitPoints * _Point;
