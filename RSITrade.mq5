@@ -11,6 +11,7 @@ input double Oversold = 30;                       // 超卖区
 
 //+------------------------------------------------------------------+
 
+
 CTrade trade;
 COrderInfo orderInfo;
 CPositionInfo positionInfo;
