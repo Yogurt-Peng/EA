@@ -3,15 +3,15 @@ input group "基本参数";
 input int MagicNumber = 1756;                     // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 input double LotSize = 0.01;                      // 手数
-input int StopLoss = 200;                         // 止损点数 0:不使用
+input int StopLoss = 600;                         // 止损点数 0:不使用
 input int TakeProfit = 200;                       // 止盈点数 0:不使用
 input int RSIPeroid = 14;                         // RSI值
 input double Overbought = 70;                     // 超买区
 input double Oversold = 30;                       // 超卖区
 
-input bool IsFilter = false;                       // 是否使用布林带过滤
-input ENUM_TIMEFRAMES TimeFrameFilter = PERIOD_D1; // 过滤布林带周期
-input bool IsRevers = false;                       // 反转过滤条件
+input bool IsFilter = true;                       // 是否使用布林带过滤
+input ENUM_TIMEFRAMES TimeFrameFilter = PERIOD_H4; // 过滤布林带周期
+input bool IsRevers = true;                       // 反转过滤条件
 
 input bool Long = true;  // 多单
 input bool Short = true; // 空单
