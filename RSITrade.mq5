@@ -9,13 +9,12 @@ input int RSIPeroid = 14;                         // RSI值
 input double Overbought = 70;                     // 超买区
 input double Oversold = 30;                       // 超卖区
 
-input group "过滤参数";
-input int EMAValue = 9;                           // FastEMA
-input ENUM_TIMEFRAMES EMAPeriod = PERIOD_CURRENT; // FastEMA周期
+input bool IsFilter = false;                       // 是否使用布林带过滤
+input ENUM_TIMEFRAMES TimeFrameFilter = PERIOD_D1; // 过滤布林带周期
+input bool IsRevers = false;                       // 反转过滤条件
 
-input group "指标参数";
-input int ATRPeriod = 14;                         // ATR周期
-input double ATRStopLoss = 0.5;                   // ATR止损倍数
+input bool Long = true;  // 多单
+input bool Short = true; // 空单
 
 //+------------------------------------------------------------------+
 
@@ -26,12 +25,12 @@ CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
 
 int handleRSI;
 int handleBB;
-int handleEMA;
+int handleBBFilter;
 int handleATR;
 double bufferRSIValue[];
 double bufferBBValue[];
-double bufferEMAValue[];
 double bufferATRValue[];
+double bufferBBFilterValue[];
 
 //+------------------------------------------------------------------+
 
@@ -40,12 +39,13 @@ int OnInit()
 
     handleRSI = iRSI(_Symbol, TimeFrame, RSIPeroid, PRICE_CLOSE);
     handleBB = iBands(_Symbol, TimeFrame, 20, 0, 2, PRICE_CLOSE);
+    handleBBFilter = iBands(_Symbol, TimeFrameFilter, 20, 0, 2, PRICE_CLOSE);
     // handleEMA = iMA(_Symbol, EMAPeriod, EMAValue, 0, MODE_EMA, PRICE_CLOSE);
-    handleATR = iATR(_Symbol, TimeFrame, ATRPeriod);
+    handleATR = iATR(_Symbol, PERIOD_H1, 14);
     ArraySetAsSeries(bufferRSIValue, true);
     ArraySetAsSeries(bufferBBValue, true);
-    ArraySetAsSeries(bufferEMAValue, true);
     ArraySetAsSeries(bufferATRValue, true);
+    ArraySetAsSeries(bufferBBFilterValue, true);
 
     trade.SetExpertMagicNumber(MagicNumber);
     Print("🚀🚀🚀 初始化成功");
@@ -58,12 +58,13 @@ void OnTick()
 
     if (tools.GetPositionCount(MagicNumber) > 0)
     {
-        CopyBuffer(handleBB, 0, 0, 1, bufferBBValue);
+        CopyBuffer(handleBB, 1, 0, 1, bufferBBValue);
         if (SymbolInfoDouble(_Symbol, SYMBOL_ASK) >= bufferBBValue[0])
         {
             tools.CloseAllPositions(MagicNumber, POSITION_TYPE_BUY);
         }
-        else if (SymbolInfoDouble(_Symbol, SYMBOL_BID) <= bufferBBValue[0])
+        CopyBuffer(handleBB, 2, 0, 1, bufferBBValue);
+        if (SymbolInfoDouble(_Symbol, SYMBOL_BID) <= bufferBBValue[0])
         {
             tools.CloseAllPositions(MagicNumber, POSITION_TYPE_SELL);
         }
@@ -74,32 +75,67 @@ void OnTick()
     if (!tools.IsNewBar(TimeFrame))
         return;
 
-    CopyBuffer(handleEMA, 0, 0, 1, bufferEMAValue);
     CopyBuffer(handleATR, 0, 0, 1, bufferATRValue);
 
     double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double diancha = (ask - bid) * _Point;
+
+    if (diancha > 1.2)
+    {
+        Print("✔️点差过大：[RSITrade.mq5:86]: diancha: ", diancha);
+        return;
+    }
+
     double buySl = ask - StopLoss * _Point;
     double buyTp = ask + TakeProfit * _Point;
-    buyTp=ask+bufferATRValue[0]*ATRStopLoss;
     // buySl=iLow(_Symbol, TimeFrame, iLowest(_Symbol, TimeFrame, MODE_LOW,5));
 
-    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
     double sellSl = bid + StopLoss * _Point;
     double sellTp = bid - TakeProfit * _Point;
-    sellTp=bid-bufferATRValue[0]*ATRStopLoss;
     // sellSl= iHigh(_Symbol, TimeFrame, iHighest(_Symbol, TimeFrame,  MODE_HIGH,5));
+
+    double high = iHigh(_Symbol, TimeFrame, 1);
+    double low = iLow(_Symbol, TimeFrame, 1);
+    double Amplitude = high - low;
+
+    double yesterdayClose = iClose(_Symbol, PERIOD_D1, 1);
+
+    CopyBuffer(handleBBFilter, 0, 1, 1, bufferBBFilterValue);
+    bool buySign = false;
+    bool sellSign = false;
+
+    if (IsFilter)
+    {
+        if (IsRevers)
+        {
+            buySign = Long && (yesterdayClose < bufferBBFilterValue[0]);
+            sellSign = Short && (yesterdayClose > bufferBBFilterValue[0]);
+        }
+        else
+        {
+            buySign = Long && (yesterdayClose > bufferBBFilterValue[0]);
+            sellSign = Short && (yesterdayClose < bufferBBFilterValue[0]);
+        }
+    }
+    else
+    {
+        buySign = Long;
+        sellSign = Short;
+    }
 
     switch (RSISign())
     {
     case BUY:
     {
-        // if (bufferEMAValue[0] < ask)
+
+        if (buySign)
             trade.Buy(LotSize, _Symbol, ask, buySl, 0, "RSITrend");
         break;
     };
     case SELL:
     {
-        // if (bufferEMAValue[0] > bid)
+        if (sellSign)
             trade.Sell(LotSize, _Symbol, bid, sellSl, 0, "RSITrend");
         break;
     };
