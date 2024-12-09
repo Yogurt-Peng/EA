@@ -3,8 +3,8 @@ input group "基本参数";
 input int MagicNumber = 56712;                    // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 input double LotSize = 0.01;                      // 手数
-input int StopLoss = 100;                         // 止损点数 0:不使用
-input int TakeProfit = 180;                       // 止盈点数 0:不使用
+input int StopLoss = 0;                         // 止损点数 0:不使用
+input int TakeProfit = 0;                       // 止盈点数 0:不使用
 
 input group "指标参数";
 input int RSIValue = 14;      // RSI指标值
@@ -16,9 +16,9 @@ input int BBDeviation = 2;    // Bollinger Bands指标值
 input group "过滤参数";
 input bool MAFilter = true;                     // 是否使用MA过滤
 input bool IsReverse = false;                   // 是否反向过滤条件
-input ENUM_TIMEFRAMES MAFilterTF = PERIOD_H1;   // 过滤MA带周期
-input int MAFilterValue = 20;                   // MA指标值
-input ENUM_MA_METHOD MAFilterMethod = MODE_SMA; // 过滤MA指标类型
+input ENUM_TIMEFRAMES MAFilterTF = PERIOD_H4;   // 过滤MA带周期
+input int MAFilterValue = 25;                   // MA指标值
+input ENUM_MA_METHOD MAFilterMethod = MODE_EMA; // 过滤MA指标类型
 
 //+------------------------------------------------------------------+
 
@@ -44,6 +44,8 @@ int OnInit()
     handleRSI = iRSI(_Symbol, TimeFrame, RSIValue, PRICE_CLOSE);
     handleBB = iBands(_Symbol, TimeFrame, BBValue, 0, BBDeviation, PRICE_CLOSE);
     handleMA = iMA(_Symbol, MAFilterTF, MAFilterValue, 0, MAFilterMethod, PRICE_CLOSE);
+    ChartIndicatorAdd(0,1,handleRSI);
+    ChartIndicatorAdd(0,0,handleBB);
 
     if (handleRSI == INVALID_HANDLE || handleBB == INVALID_HANDLE || handleMA == INVALID_HANDLE)
     {
