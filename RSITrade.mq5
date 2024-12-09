@@ -9,13 +9,12 @@ input int RSIPeroid = 14;                         // RSI值
 input double Overbought = 70;                     // 超买区
 input double Oversold = 30;                       // 超卖区
 
-input bool IsFilter = true;                       // 是否使用布林带过滤
+input bool IsFilter = true;                        // 是否使用布林带过滤
 input ENUM_TIMEFRAMES TimeFrameFilter = PERIOD_H4; // 过滤布林带周期
-input bool IsRevers = true;                       // 反转过滤条件
+input bool IsRevers = true;                        // 反转过滤条件
 
 input bool Long = true;  // 多单
 input bool Short = true; // 空单
-
 
 //+------------------------------------------------------------------+
 
@@ -34,7 +33,6 @@ double bufferATRValue[];
 double bufferBBFilterValue[];
 
 //+------------------------------------------------------------------+
-
 
 int OnInit()
 {
@@ -83,17 +81,12 @@ void OnTick()
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
     double diancha = (ask - bid) * _Point;
 
-    if (diancha > 1.2)
-    {
-        Print("✔️点差过大：[RSITrade.mq5:87]: diancha: ", diancha);
-        return;
-    }
 
-    double buySl =(StopLoss==0)?0:ask - StopLoss * _Point;
+    double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
     double buyTp = ask + TakeProfit * _Point;
     // buySl=iLow(_Symbol, TimeFrame, iLowest(_Symbol, TimeFrame, MODE_LOW,5));
 
-    double sellSl = (StopLoss==0)?0:bid + StopLoss * _Point;
+    double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
     double sellTp = bid - TakeProfit * _Point;
     // sellSl= iHigh(_Symbol, TimeFrame, iHighest(_Symbol, TimeFrame,  MODE_HIGH,5));
 
@@ -157,4 +150,11 @@ SIGN RSISign()
         return BUY;
 
     return NONE;
+}
+void OnDeinit(const int reason)
+{
+    IndicatorRelease(handleRSI);
+    IndicatorRelease(handleBB);
+    IndicatorRelease(handleBBFilter);
+    Print("🚀🚀🚀 SuperRSITrade移除");
 }
