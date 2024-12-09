@@ -84,15 +84,15 @@ void OnTick()
 
     if (diancha > 1.2)
     {
-        Print("✔️点差过大：[RSITrade.mq5:86]: diancha: ", diancha);
+        Print("✔️点差过大：[RSITrade.mq5:87]: diancha: ", diancha);
         return;
     }
 
-    double buySl = ask - StopLoss * _Point;
+    double buySl =(StopLoss==0)?0:ask - StopLoss * _Point;
     double buyTp = ask + TakeProfit * _Point;
     // buySl=iLow(_Symbol, TimeFrame, iLowest(_Symbol, TimeFrame, MODE_LOW,5));
 
-    double sellSl = bid + StopLoss * _Point;
+    double sellSl = (StopLoss==0)?0:bid + StopLoss * _Point;
     double sellTp = bid - TakeProfit * _Point;
     // sellSl= iHigh(_Symbol, TimeFrame, iHighest(_Symbol, TimeFrame,  MODE_HIGH,5));
 
