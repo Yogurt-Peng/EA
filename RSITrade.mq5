@@ -16,6 +16,7 @@ input bool IsRevers = true;                       // 反转过滤条件
 input bool Long = true;  // 多单
 input bool Short = true; // 空单
 
+
 //+------------------------------------------------------------------+
 
 CTrade trade;
