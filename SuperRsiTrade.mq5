@@ -2,9 +2,7 @@
 input group "基本参数";
 input int MagicNumber = 56712;                    // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
-input int LotType = 1;                            // 1:固定手数,2:固定百分比
 input double LotSize = 0.01;                      // 手数
-input double Percent = 1;                         // 百分比 1%
 input int StopLoss = 100;                         // 止损点数 0:不使用
 input int TakeProfit = 180;                       // 止盈点数 0:不使用
 
@@ -65,12 +63,15 @@ void OnTick()
 {
     double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-    double yesterdayClose = iClose(_Symbol, PERIOD_D1, 1);
+    double yesterdayClose = iClose(_Symbol, MAFilterTF, 1);
 
     double buySl = (StopLoss == 0) ? 0 : ask - StopLoss * _Point;
     double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
     double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
     double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
+
+
+
 
     if (tools.GetPositionCount(MagicNumber) > 0)
     {
@@ -95,7 +96,7 @@ void OnTick()
 
     if (MAFilter)
     {
-        CopyBuffer(handleMA, 0, 0, 1, bufferMAValue);
+        CopyBuffer(handleMA, 0, 1, 1, bufferMAValue);
         if (IsReverse)
         {
             buyCondition = yesterdayClose < bufferMAValue[0] && GetSign() == BUY;
@@ -103,7 +104,6 @@ void OnTick()
         }
         else
         {
-
             buyCondition = yesterdayClose > bufferMAValue[0] && GetSign() == BUY;
             sellCondition = yesterdayClose < bufferMAValue[0] && GetSign() == SELL;
         }
