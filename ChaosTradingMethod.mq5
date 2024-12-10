@@ -15,9 +15,7 @@ input bool UseAC = true;      // 加速
 //+------------------------------------------------------------------+
 
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
 
 int handleFractals;  // 分型
 int handleAlligator; // 鳄鱼线

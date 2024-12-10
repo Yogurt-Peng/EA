@@ -35,9 +35,7 @@ double bufferWPRValue[];
 
 
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
 
 int OnInit()
 {

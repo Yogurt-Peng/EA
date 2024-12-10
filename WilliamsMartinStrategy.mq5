@@ -15,9 +15,8 @@ input double StopLossPoints = 200;                // 每次开仓的固定止损
 
 //+------------------------------------------------------------------+
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+
+CTools tools(_Symbol, &trade);
 
 int handleWPR; // 威廉姆斯指标
 double bufferWPRValue[];

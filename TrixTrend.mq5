@@ -22,9 +22,7 @@ input double Amplitude = 0.02; // 波动幅度
 //+------------------------------------------------------------------+
 
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
 
 int handleTrix;
 int handleEMA;

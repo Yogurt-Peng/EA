@@ -23,11 +23,9 @@ input ENUM_MA_METHOD MAFilterMethod = MODE_SMA; // 过滤MA指标类型
 //+------------------------------------------------------------------+
 
 
-
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
+
 
 int handleRSI;
 int handleBB;

@@ -32,9 +32,7 @@ double FastEMAValueBuffer[];
 double SlowEMAValueBuffer[];
 
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
 
 //+------------------------------------------------------------------+
 

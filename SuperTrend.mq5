@@ -17,9 +17,7 @@ input ENUM_TIMEFRAMES MAFilterPeriod = PERIOD_CURRENT; // 均线过滤周期
 input int MAFilterValue = 100;                           // 均线过滤偏移
 
 CTrade trade;
-COrderInfo orderInfo;
-CPositionInfo positionInfo;
-CTools tools(_Symbol, &trade, &positionInfo, &orderInfo);
+CTools tools(_Symbol, &trade);
 
 int handleSuperTrend;
 int handleMAFilter;
