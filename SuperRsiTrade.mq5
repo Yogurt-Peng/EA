@@ -15,10 +15,10 @@ input int BBDeviation = 2;    // Bollinger Bands指标值
 
 input group "过滤参数";
 input bool MAFilter = true;                     // 是否使用MA过滤
-input bool IsReverse = false;                   // 是否反向过滤条件
-input ENUM_TIMEFRAMES MAFilterTF = PERIOD_H4;   // 过滤MA带周期
-input int MAFilterValue = 25;                   // MA指标值
-input ENUM_MA_METHOD MAFilterMethod = MODE_EMA; // 过滤MA指标类型
+input bool IsReverse = true;                   // 是否反向过滤条件
+input ENUM_TIMEFRAMES MAFilterTF = PERIOD_M15;   // 过滤MA带周期
+input int MAFilterValue = 80;                   // MA指标值
+input ENUM_MA_METHOD MAFilterMethod = MODE_SMA; // 过滤MA指标类型
 
 //+------------------------------------------------------------------+
 
@@ -48,6 +48,7 @@ int OnInit()
     handleMA = iMA(_Symbol, MAFilterTF, MAFilterValue, 0, MAFilterMethod, PRICE_CLOSE);
     ChartIndicatorAdd(0,1,handleRSI);
     ChartIndicatorAdd(0,0,handleBB);
+    ChartIndicatorAdd(0,0,handleMA);
 
     if (handleRSI == INVALID_HANDLE || handleBB == INVALID_HANDLE || handleMA == INVALID_HANDLE)
     {
