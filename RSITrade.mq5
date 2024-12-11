@@ -1,8 +1,9 @@
 #include "Tools.mqh"
 #include "Indicators.mqh"
+
 input group "基本参数";
 input int MagicNumber = 52422;                    // EA编号
-input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_M15; // 周期
 input double LotSize = 0.01;                      // 手数
 input int StopLoss = 0;                           // 止损点数 0:不使用
 input int TakeProfit = 0;                         // 止盈点数 0:不使用
@@ -17,8 +18,8 @@ input int BBDeviation = 2;    // Bollinger Bands指标值
 input group "过滤参数";
 input bool MAFilter = true;                     // 是否使用MA过滤
 input bool IsReverse = true;                    // 是否反向过滤条件
-input ENUM_TIMEFRAMES MAFilterTF = PERIOD_M15;  // 过滤MA带周期
-input int MAFilterValue = 80;                   // MA指标值
+input ENUM_TIMEFRAMES MAFilterTF = PERIOD_M2;  // 过滤MA带周期
+input int MAFilterValue = 30;                   // MA指标值
 input ENUM_MA_METHOD MAFilterMethod = MODE_SMA; // 过滤MA指标类型
 
 CTrade trade;
@@ -74,9 +75,6 @@ void OnTick()
 
     if (!tools.IsNewBar(TimeFrame))
         return;
-
-
-
 
 
 
