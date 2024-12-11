@@ -1,5 +1,13 @@
 #include <Trade/Trade.mqh>
 
+
+enum SIGN
+{
+    BUY,
+    SELL,
+    NONE
+};
+
 class CTools
 {
 private:
@@ -35,6 +43,7 @@ public:
     bool IsUpBar(MqlRates &rates);
     //  获取所有订单总的亏损
     double GetTotalProfit(long magicNum);
+
 };
 
 CTools::CTools(string _symbol, CTrade *_trade)
@@ -287,105 +296,36 @@ double CTools::GetTotalProfit(long magicNum)
     return totalProfit;
 };
 
-enum SIGN
-{
-    BUY,
-    SELL,
-    NONE
-};
 
-class CIndicator
-{
-protected:
-    int m_handle;                // 指标句柄
-    string m_symbol;             // 交易品种
-    ENUM_TIMEFRAMES m_timeFrame; // 时间周期
-public:
-    CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {};
-    virtual ~CIndicator(){};
+// 获取上一个订单关闭的原因
+// void GetLastOrderReason(long magicNum)
+// {
+//     HistorySelect(0, TimeCurrent());
+//     // 获取历史记录中所有订单的数量
+//     int total_orders = HistoryDealsTotal();
+//     // 倒叙遍历所有订单
+//     // 从最新的订单开始检查
+//     for (int i = total_orders - 1; i >= 0; i--)
+//     {
+//         // 获取历史订单的 Ticket
+//         ulong ticket = HistoryOrderGetTicket(i);
 
-    // 获取指标句柄
-    int GetHandle() { return m_handle; }
-};
+//         // 检查订单关闭原因
+//         int close_reason = (int)HistoryOrderGetInteger(ticket, ORDER_REASON);
 
-class CRSI : public CIndicator
-{
-private:
-    int m_value;
-    double bufferValue[];
+//         // 检查是否因为止损关闭
+//         if (close_reason == ORDER_REASON_SL)
+//         {
+//             string symbol = HistoryOrderGetString(ticket, ORDER_SYMBOL);
+//             double stop_loss = HistoryOrderGetDouble(ticket, ORDER_SL);
+//             PrintFormat("订单 %d (%s) 因触发止损 %.2f 而关闭", ticket, symbol, stop_loss);
 
-public:
-    CRSI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
-
-    CRSI::~CRSI() {}
-
-    // 初始化RSI指标，获取指标句柄
-    bool Initialize()
-    {
-        ArraySetAsSeries(bufferValue, true);
-        m_handle = iRSI(m_symbol, m_timeFrame, m_value, PRICE_CLOSE);
-        return (m_handle != INVALID_HANDLE);
-    }
-
-    // 获取当前K线的前一个指标当前值
-    double GetValue(int index)
-    {
-        CopyBuffer(m_handle, 0, 0, index, bufferValue);
-        return bufferValue[0];
-    }
-};
-
-class CBollingerBands : public CIndicator
-{
-private:
-    int m_value;
-    int m_deviation;
-    double bufferValue[];
-
-public:
-    CBollingerBands(string symbol, ENUM_TIMEFRAMES timeFrame, int bbValue, int bbDeviation) : CIndicator(symbol, timeFrame), m_value(bbValue), m_deviation(bbDeviation) {};
-    ~CBollingerBands(){};
-
-    // 初始化布林带指标，获取指标句柄
-    bool Initialize()
-    {
-        m_handle = iBands(m_symbol, m_timeFrame, m_value, 0, m_deviation, PRICE_CLOSE);
-        ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
-    }
-
-    // 获取布林带指标特定缓冲区（比如上轨、中轨、下轨等）的值，传入缓冲区索引参数
-    double GetValue(int bufferIndex, int index)
-    {
-        CopyBuffer(m_handle, bufferIndex, 0, index, bufferValue);
-        return bufferValue[0];
-    }
-};
-
-class CMA : public CIndicator
-{
-private:
-    int m_value;
-    ENUM_MA_METHOD m_method;
-    double bufferValue[];
-
-public:
-    CMA(string symbol, ENUM_TIMEFRAMES timeFrame, int maValue, ENUM_MA_METHOD maMethod) : CIndicator(symbol, timeFrame), m_value(maValue), m_method(maMethod) {};
-    ~CMA(){};
-
-    // 初始化移动平均线指标，获取指标句柄
-    bool Initialize()
-    {
-        m_handle = iMA(m_symbol, m_timeFrame, m_value, 0, m_method, PRICE_CLOSE);
-        ArraySetAsSeries(bufferValue, true);
-
-        return (m_handle != INVALID_HANDLE);
-    }
-
-    // 获取移动平均线指标当前值
-    double GetValue(int index)
-    {
-        CopyBuffer(m_handle, 0, 0, index, bufferValue);
-        return bufferValue[0];
-    }
-};
+//             // 获取订单关闭时间
+//             long close_time =HistoryOrderGetInteger(ticket, ORDER_TIME_EXPIRATION);
+//             // 暂停4小时
+//             FilterTime = close_time + 1* 60 * 60;
+//             Print("暂停4小时");
+//             break;
+//         }
+//     }
+// }
