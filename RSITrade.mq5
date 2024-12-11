@@ -1,5 +1,6 @@
 #include "Tools.mqh"
 #include "Indicators.mqh"
+#include "Draw.mqh"
 
 input group "基本参数";
 input int MagicNumber = 52422;                    // EA编号
@@ -23,13 +24,15 @@ input int MAFilterValue = 30;                   // MA指标值
 input ENUM_MA_METHOD MAFilterMethod = MODE_SMA; // 过滤MA指标类型
 
 CTrade trade;
+CDraw draw;
 CTools tools(_Symbol, &trade);
 
 CRSI rsi(_Symbol, TimeFrame, RSIValue);
 CBollingerBands bollinger(_Symbol, TimeFrame, BBValue, BBDeviation);
 CMA ma(_Symbol, MAFilterTF, MAFilterValue, MAFilterMethod);
 
-datetime FilterTime = 0;
+
+SIGN maSign=NONE, rsiSign=NONE;
 
 int OnInit()
 {
@@ -49,6 +52,15 @@ int OnInit()
 
 void OnTick()
 {
+    if(!MQLInfoInteger(MQL_TESTER))
+    {
+        bool isAutoTradingEnabled =TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
+        string dbgInfo[3]={"RSITrade","",""};
+        dbgInfo[1]="AutoTrading: "+(isAutoTradingEnabled?"Enabled":"Disabled");
+        dbgInfo[2]=StringFormat("MAFilter: %s TF: %d Value: %d  Method: %d",MAFilter?"Enabled":"Disabled",MAFilterTF,MAFilterValue,MAFilterMethod);
+        draw.DrawLabels("Debug",dbgInfo,3,10,200,C'53, 153, 130',10,CORNER_LEFT_UPPER);
+    }
+
     double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
     double close = iClose(_Symbol, TimeFrame, 1);
@@ -57,7 +69,6 @@ void OnTick()
     double buyTp = (TakeProfit == 0) ? 0 : ask + TakeProfit * _Point;
     double sellSl = (StopLoss == 0) ? 0 : bid + StopLoss * _Point;
     double sellTp = (TakeProfit == 0) ? 0 : bid - TakeProfit * _Point;
-
 
     if (tools.GetPositionCount(MagicNumber) > 0)
     {
@@ -76,7 +87,8 @@ void OnTick()
     if (!tools.IsNewBar(TimeFrame))
         return;
 
-
+    maSign = close > ma.GetValue(1) ? BUY : SELL;
+    rsiSign = GetSign();
 
     bool buyCondition = false;
     bool sellCondition = false;
@@ -85,13 +97,13 @@ void OnTick()
     {
         if (IsReverse)
         {
-            buyCondition = close < ma.GetValue(1) && GetSign() == BUY;
-            sellCondition = close > ma.GetValue(1) && GetSign() == SELL;
+            buyCondition =  maSign==SELL && rsiSign == BUY;
+            sellCondition =  maSign==BUY && rsiSign == SELL;
         }
         else
         {
-            buyCondition = close > ma.GetValue(1) && GetSign() == BUY;
-            sellCondition = close < ma.GetValue(1) && GetSign() == SELL;
+            buyCondition = maSign==BUY && rsiSign == BUY;
+            sellCondition = maSign==SELL && rsiSign == SELL;
         }
     }
     else
@@ -110,9 +122,6 @@ void OnTick()
     }
 }
 
-void OnTrade()
-{
-}
 
 void OnDeinit(const int reason)
 {
