@@ -95,7 +95,7 @@ enum ENUM_SHOW_MODE
 };
 input ENUM_TIMEFRAMES         InpTimeframe         = PERIOD_D1;                                    // Timeframe
 input ENUM_CALC_MODE          CalculationMode      = CALC_MODE_CLASSIC1;                           // Calculation Mode
-input ENUM_SHOW_MODE          InpShowMode          = SHOW_MODE_HISTORICAL;                         // Displaying Mode
+input ENUM_SHOW_MODE          InpShowMode          = SHOW_MODE_TODAY;                         // Displaying Mode
 input int                     InpHistoricalBars    = 0;                                            // Historical Bars (0=All)
 input bool                    InpShowLabels        = true;                                         // Show Labels
 input bool                    InpShowPriceTags     = true;                                         // Show Price Tags
@@ -156,7 +156,7 @@ input bool                    InpR2Alert           = true;                      
 input bool                    InpR3Alert           = true;                                         // R3
 input bool                    InpR4Alert           = true;                                         // R4
 input string                  DescAlertSettings    = "********** Alert Settings **********";       // Description
-input bool                    InpAlertShowPopup    = true;                                         // Show Pop-up
+input bool                    InpAlertShowPopup    = false;                                         // Show Pop-up
 input bool                    InpAlertSendEmail    = false;                                        // Send Email
 input bool                    InpAlertSendNotification   = false;                                  // Send Notification
 input bool                    InpAlertPlaySound    = false;                                        // Play Sound

@@ -138,7 +138,7 @@ double GetHighestLowestPrice(ENUM_SERIESMODE priceType)
     }
     int period_seconds = secondsTimeFrame[timeframeIndex];
     datetime currentTime = TimeCurrent();
-    Print("✔️[LondonBreakOut.mq5:136]: currentTime: ", currentTime);
+    Print("✔️[LondonBreakOut.mq5:141]: currentTime: ", currentTime);
 
     // 计算有多少根K线
     int barsCount = secondsSinceStart / period_seconds;

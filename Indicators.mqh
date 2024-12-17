@@ -95,3 +95,32 @@ public:
         return bufferValue[0];
     }
 };
+
+
+
+class CPivots: public CIndicator
+{
+
+private:
+    double bufferValue[];
+    int m_calcMode;
+
+public:
+    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame, int calcMode=0) : CIndicator(symbol, timeFrame),m_calcMode(calcMode) {};
+    ~CPivots(){};
+    // 初始化Pivots指标，获取指标句柄
+    bool Initialize()
+    {
+
+        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_timeFrame, m_calcMode);
+        ArraySetAsSeries(bufferValue, true);
+        return (m_handle != INVALID_HANDLE);
+    }
+
+    double GetValue(int index)
+    {
+        CopyBuffer(m_handle, index, 0, 1, bufferValue);
+        return bufferValue[0];
+    }
+        
+};

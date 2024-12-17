@@ -1,3 +1,4 @@
+
 class CDraw
 {
 public:
@@ -19,7 +20,7 @@ public:
         }
         else
             Print("Failed to create the object OBJ_LABEL ", name, ", Error code = ", GetLastError());
-    }
+    };
 
     // 绘制文本数组
     void DrawLabels(string name, string &text[], int lineCount, int x, int y, color col = clrRed, int fontsize = 10, int sub_window = 0, ENUM_BASE_CORNER anchor_point = CORNER_LEFT_UPPER)
@@ -35,7 +36,7 @@ public:
         {
             DrawLabel(name + IntegerToString(i), text[i], x, y + i * 20, col, fontsize, sub_window, anchor_point);
         }
-    }
+    };
 
     void DrawRectangleFill(string name, int x1, double y1, int x2, double y2, color col = clrRed, int width = 1, int sub_window = 0)
     {
@@ -50,5 +51,5 @@ public:
             ObjectSetInteger(0,name,OBJPROP_FILL,true); 
 
         }
-    }
+    };
 };

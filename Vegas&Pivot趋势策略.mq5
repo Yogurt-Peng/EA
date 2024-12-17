@@ -8,8 +8,7 @@ input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 input double LotSize = 0.01;                      // 手数
 input int StopLoss = 100;                         // 止损点数 0:不使用
 input int TakeProfit = 180;                       // 止盈点数 0:不使用
-input int StopTime = 9; // 全部平仓时间
-
+input int StopTime = 9;                           // 全部平仓时间
 
 CTrade trade;
 CDraw draw;
@@ -17,17 +16,18 @@ CTools tools(_Symbol, &trade);
 
 CMA Ma1(_Symbol, TimeFrame, 169, MODE_EMA);
 CMA Ma2(_Symbol, TimeFrame, 338, MODE_EMA);
-
-
+CPivots Pivots(_Symbol, TimeFrame);
 
 int OnInit()
 {
     Print("🚀🚀🚀 Vegas&Pivot趋势策略初始化中...");
     Ma1.Initialize();
     Ma2.Initialize();
+    Pivots.Initialize();
 
     ChartIndicatorAdd(0, 0, Ma1.GetHandle());
     ChartIndicatorAdd(0, 0, Ma2.GetHandle());
+    ChartIndicatorAdd(0, 0, Pivots.GetHandle());
     trade.SetExpertMagicNumber(MagicNumber);
     return INIT_SUCCEEDED;
 }
@@ -41,8 +41,14 @@ void OnTick()
     
 
 
-};
+    if (Ma1.GetValue(1) > Ma2.GetValue(1))
+    {
 
+    }
+    else if (Ma1.GetValue(1) < Ma2.GetValue(1))
+    {
+    }
+};
 
 void OnDeinit(const int reason)
 {
