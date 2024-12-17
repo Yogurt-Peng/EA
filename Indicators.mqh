@@ -117,7 +117,10 @@ public:
 
     double GetValue(int index)
     {
-        CopyBuffer(m_handle, index, 0, 1, bufferValue);
+        CopyBuffer(m_handle, index, 1, 1, bufferValue);
+
+
+
         return bufferValue[0];
     }
         
