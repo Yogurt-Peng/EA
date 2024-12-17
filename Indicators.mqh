@@ -1,5 +1,3 @@
-
-
 class CIndicator
 {
 protected:
@@ -104,15 +102,15 @@ class CPivots: public CIndicator
 private:
     double bufferValue[];
     int m_calcMode;
+    ENUM_TIMEFRAMES m_pivotTimeFrame;
 
 public:
-    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame, int calcMode=0) : CIndicator(symbol, timeFrame),m_calcMode(calcMode) {};
+    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame,ENUM_TIMEFRAMES pivotTimeFrame= PERIOD_D1, int calcMode=0) : CIndicator(symbol, timeFrame),m_calcMode(calcMode), m_pivotTimeFrame(pivotTimeFrame){};
     ~CPivots(){};
     // 初始化Pivots指标，获取指标句柄
     bool Initialize()
     {
-
-        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_timeFrame, m_calcMode);
+        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_pivotTimeFrame,m_calcMode);
         ArraySetAsSeries(bufferValue, true);
         return (m_handle != INVALID_HANDLE);
     }
