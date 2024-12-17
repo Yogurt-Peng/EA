@@ -210,6 +210,9 @@ double GetHighestLowestPrice(ENUM_SERIESMODE priceType)
     return price;
 };
 
+
+
+
 datetime GetStartHourTime(int startHour)
 {
     // 验证输入的小时是否有效
