@@ -137,7 +137,6 @@ void OnDeinit(const int reason)
     IndicatorRelease(bollinger.GetHandle());
     IndicatorRelease(ma.GetHandle());
     CalculateOutlierRatio();
-    CalculateOutlierRatioNumber();
     CalculateWeeklyProfitAndLoss();
     Print("🚀🚀🚀 RSITrade移除");
 }
@@ -200,49 +199,7 @@ void CalculateOutlierRatio()
                 total_profit, top_10_profit, outlier_ratio * 100);
 }
 
-void CalculateOutlierRatioNumber()
-{
-    HistorySelect(0, TimeCurrent());
-    int deals = HistoryDealsTotal();
-    double total_profit = 0.0;
-    int total_profit_count = 0;
-    int top_10_count = 0;
-    double profits[];
 
-    // 遍历历史订单，提取所有盈利订单的利润
-    for (int i = 0; i < deals; i++)
-    {
-        ulong ticket = HistoryDealGetTicket(i);
-        double profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-        if (profit > 0) // 仅统计盈利订单
-        {
-            ArrayResize(profits, ArraySize(profits) + 1);
-            profits[ArraySize(profits) - 1] = profit;
-            total_profit += profit;
-            total_profit_count++; // 统计总盈利笔数
-        }
-    }
-
-    // 如果没有盈利订单，直接返回
-    if (ArraySize(profits) == 0)
-    {
-        Print("没有盈利订单，无法计算离群值比例。");
-        return;
-    }
-
-    // 按利润从高到低排序
-    ArraySort(profits);
-
-    // 计算前10%的笔数
-    top_10_count = MathMax(1, (int)(ArraySize(profits) * 0.1)); // 至少保留一笔
-
-    // 计算比例
-    double outlier_ratio = (double)top_10_count / total_profit_count;
-
-    // 打印结果
-    PrintFormat("总盈利笔数: %d, 前10%%利润笔数: %d, 占比: %.2f%%",
-                total_profit_count, top_10_count, outlier_ratio * 100);
-}
 void CalculateWeeklyProfitAndLoss()
 {
     // 初始化变量
