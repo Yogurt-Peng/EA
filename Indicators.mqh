@@ -6,7 +6,7 @@ protected:
     ENUM_TIMEFRAMES m_timeFrame; // 时间周期
 public:
     CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {};
-    virtual ~CIndicator(){};
+    virtual ~CIndicator() {};
 
     // 获取指标句柄
     int GetHandle() { return m_handle; }
@@ -48,7 +48,7 @@ private:
 
 public:
     CBollingerBands(string symbol, ENUM_TIMEFRAMES timeFrame, int bbValue, int bbDeviation) : CIndicator(symbol, timeFrame), m_value(bbValue), m_deviation(bbDeviation) {};
-    ~CBollingerBands(){};
+    ~CBollingerBands() {};
 
     // 初始化布林带指标，获取指标句柄
     bool Initialize()
@@ -75,7 +75,7 @@ private:
 
 public:
     CMA(string symbol, ENUM_TIMEFRAMES timeFrame, int maValue, ENUM_MA_METHOD maMethod) : CIndicator(symbol, timeFrame), m_value(maValue), m_method(maMethod) {};
-    ~CMA(){};
+    ~CMA() {};
 
     // 初始化移动平均线指标，获取指标句柄
     bool Initialize()
@@ -94,9 +94,7 @@ public:
     }
 };
 
-
-
-class CPivots: public CIndicator
+class CPivots : public CIndicator
 {
 
 private:
@@ -105,12 +103,12 @@ private:
     ENUM_TIMEFRAMES m_pivotTimeFrame;
 
 public:
-    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame,ENUM_TIMEFRAMES pivotTimeFrame= PERIOD_D1, int calcMode=0) : CIndicator(symbol, timeFrame),m_calcMode(calcMode), m_pivotTimeFrame(pivotTimeFrame){};
-    ~CPivots(){};
+    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame, ENUM_TIMEFRAMES pivotTimeFrame = PERIOD_D1, int calcMode = 0) : CIndicator(symbol, timeFrame), m_calcMode(calcMode), m_pivotTimeFrame(pivotTimeFrame) {};
+    ~CPivots() {};
     // 初始化Pivots指标，获取指标句柄
     bool Initialize()
     {
-        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_pivotTimeFrame,m_calcMode);
+        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_pivotTimeFrame, m_calcMode);
         ArraySetAsSeries(bufferValue, true);
         return (m_handle != INVALID_HANDLE);
     }
@@ -119,9 +117,59 @@ public:
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
 
+        return bufferValue[0];
+    }
+};
 
+class CDonchian : public CIndicator
+{
+private:
+    int m_donchianValue;
+    double bufferValue[];
+
+public:
+    CDonchian(string symbol, ENUM_TIMEFRAMES timeFrame, int donchianValue) : CIndicator(symbol, timeFrame), m_donchianValue(donchianValue) {};
+    ~CDonchian() {};
+
+    // 初始化Donchian指标，获取指标句柄
+    bool Initialize()
+    {
+        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\donchian_channel", m_donchianValue);
+        ArraySetAsSeries(bufferValue, true);
+        return (m_handle != INVALID_HANDLE);
+    }
+
+    double GetValue(int index)
+    {
+        CopyBuffer(m_handle, index, 1, 1, bufferValue);
 
         return bufferValue[0];
     }
-        
+
+};
+
+class CATR : public CIndicator
+{
+private:
+    int m_atrValue;
+    double bufferValue[];
+
+public:
+    CATR(string symbol, ENUM_TIMEFRAMES timeFrame, int atrValue) : CIndicator(symbol, timeFrame), m_atrValue(atrValue) {};
+    ~CATR() {};
+
+    // 初始化ATR指标，获取指标句柄
+    bool Initialize()
+    {
+        m_handle = iATR(m_symbol, m_timeFrame, m_atrValue);
+        ArraySetAsSeries(bufferValue, true);
+        return (m_handle != INVALID_HANDLE);
+    }
+
+    double GetValue(int index)
+    {
+        CopyBuffer(m_handle, 0, index, 1, bufferValue);
+
+        return bufferValue[0];  
+    }
 };
