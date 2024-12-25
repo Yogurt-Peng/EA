@@ -46,10 +46,23 @@ public:
             ObjectSetInteger(0, name, OBJPROP_COLOR, col);
             //--- 设置矩形线的宽度
             ObjectSetInteger(0, name, OBJPROP_WIDTH, width);
-            ObjectSetInteger(0,name,OBJPROP_WIDTH,width); 
-            //--- 启用 (true) 或禁用 (false) 填充矩形的模式 
-            ObjectSetInteger(0,name,OBJPROP_FILL,true); 
-
+            ObjectSetInteger(0, name, OBJPROP_WIDTH, width);
+            //--- 启用 (true) 或禁用 (false) 填充矩形的模式
+            ObjectSetInteger(0, name, OBJPROP_FILL, true);
         }
     };
+
+    void DrawHorizontalLine(string name, double y1, color col = clrRed, int width = 1, int sub_window = 0)
+    {
+        if (ObjectCreate(0, name, OBJ_HLINE, sub_window, 0, y1))
+        {
+            //--- 设置线的颜色
+            ObjectSetInteger(0, name, OBJPROP_COLOR, col);
+            //--- 设置线的宽度
+            ObjectSetInteger(0, name, OBJPROP_WIDTH, width);
+        }
+
+    };
+
+
 };
