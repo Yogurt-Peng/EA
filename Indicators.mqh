@@ -173,3 +173,44 @@ public:
         return bufferValue[0];  
     }
 };
+
+class CHeiKenAshi : public CIndicator
+{
+private:
+    double bufferValue[];
+
+public:
+    CHeiKenAshi(string symbol, ENUM_TIMEFRAMES timeFrame) : CIndicator(symbol, timeFrame) {};
+    ~CHeiKenAshi() {};
+
+    // 初始化HeiKenAshi指标，获取指标句柄
+    bool Initialize()
+    {
+        m_handle = iCustom(m_symbol, m_timeFrame, "Examples\\Heiken_Ashi.ex5");
+        Print("✔️[Indicators.mqh:190]: m_handle: ", m_handle);
+        ArraySetAsSeries(bufferValue, true);
+        return (m_handle != INVALID_HANDLE);
+    }
+    // Opne High Close Low
+    double GetValue(int index)
+    {
+        CopyBuffer(m_handle, index, 1, 1, bufferValue);
+        return bufferValue[0];
+    }
+
+    void GetValues(int number, double &open[], double &high[], double &low[], double &close[])
+    {
+        for( int i = 0; i < number; i++)
+        {
+            CopyBuffer(m_handle, 0, i+1, 1, bufferValue);
+            open[i] = bufferValue[0];
+            CopyBuffer(m_handle, 1, i+1, 1, bufferValue);
+            high[i] = bufferValue[0];
+            CopyBuffer(m_handle, 2, i+1, 1, bufferValue);
+            low[i] = bufferValue[0];
+            CopyBuffer(m_handle, 3, i+1, 1, bufferValue);
+            close[i] = bufferValue[0];
+        }
+
+    }
+};
