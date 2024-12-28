@@ -1,4 +1,5 @@
 #include "Tools.mqh"
+#include "Indicators.mqh"
 input group "基本参数";
 input int MagicNumber = 1756;                     // EA编号
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
@@ -13,56 +14,42 @@ input bool Long = true;  // 多单
 input bool Short = true; // 空单
 
 input bool UseMAFilter = true;                         // 是否使用均线过滤
-input ENUM_TIMEFRAMES MAFilterPeriod = PERIOD_CURRENT; // 均线过滤周期
-input int MAFilterValue = 100;                           // 均线过滤偏移
+input ENUM_TIMEFRAMES EMAPeriod = PERIOD_CURRENT; // 均线过滤周期
+input int EMAValueA = 144;                           // 均线过滤偏移
+input int EMAValueB = 169;                           // 均线过滤偏移
+
 
 CTrade trade;
 CTools tools(_Symbol, &trade);
 
 int handleSuperTrend;
-int handleMAFilter;
+
+CMA Ma1(_Symbol, EMAPeriod, EMAValueA, MODE_EMA);
+CMA Ma2(_Symbol, EMAPeriod, EMAValueB, MODE_EMA);
 
 double bufferSuperTrendValue[];
-double bufferMAFilterValue[];
 
 int OnInit()
 {
     handleSuperTrend = iCustom(_Symbol, TimeFrame, "Wait_Indicators\\SuperTrend", SuperTrendPeriod, SuperTrendMultiplier);
-    handleMAFilter = iMA(_Symbol, MAFilterPeriod, MAFilterValue, 0, MODE_EMA, PRICE_CLOSE);
-
+    Ma1.Initialize();
+    Ma2.Initialize();
     ArraySetAsSeries(bufferSuperTrendValue, true);
-    ArraySetAsSeries(bufferMAFilterValue, true);
+
+    ChartIndicatorAdd(0, 0, Ma1.GetHandle());
+    ChartIndicatorAdd(0, 0, Ma2.GetHandle());
 
     trade.SetExpertMagicNumber(MagicNumber);
     Print("🚀🚀🚀 初始化成功");
     return INIT_SUCCEEDED;
 }
 
+SIGN Status=NONE;
 void OnTick()
 {
 
-
-    if (tools.GetPositionCount(MagicNumber) > 0)
-    {
-        // CopyBuffer(handleSuperTrend, 0, 0, 3, bufferSuperTrendValue);
-
-        // if (SymbolInfoDouble(_Symbol, SYMBOL_ASK) <= bufferSuperTrendValue[0])
-        // {
-        //     tools.CloseAllPositions(MagicNumber, POSITION_TYPE_BUY);
-        // }
-        // else if (SymbolInfoDouble(_Symbol, SYMBOL_BID) >= bufferSuperTrendValue[0])
-        // {
-        //     tools.CloseAllPositions(MagicNumber, POSITION_TYPE_SELL);
-        // }
-
-        return;
-    }
-
     if (!tools.IsNewBar(TimeFrame))
         return;
-
-    CopyBuffer(handleMAFilter, 0, 0, 3, bufferMAFilterValue);
-
     double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
     double close = iClose(_Symbol, TimeFrame, 1);
@@ -72,28 +59,54 @@ void OnTick()
     double sellSl = bid + StopLoss * _Point;
     double sellTp = bid - TakeProfit * _Point;
 
-    switch (GetTradeSignal())
+    CopyBuffer(handleSuperTrend, 0, 1, 1, bufferSuperTrendValue);
+
+    SIGN sign= GetTradeSignal();
+
+    if(sign != Status && sign != NONE && Status!=NONE)
+    {
+        tools.CloseAllPositions(MagicNumber);
+    }
+
+    switch (sign)
     {
     case BUY:
     {
+        tools.CloseAllPositions(MagicNumber);
         if(Long)
         {
-        if (UseMAFilter && close > bufferMAFilterValue[1])
-            trade.Buy(LotSize, _Symbol, ask, buySl, buyTp, "SuperTrend");
+        if (UseMAFilter && close > Ma1.GetValue(1)&& Ma1.GetValue(1) > Ma2.GetValue(1))
+        {
+            Status= BUY;
+            trade.Buy(LotSize, _Symbol, ask, bufferSuperTrendValue[0], 0, "SuperTrend");
+
+        }
         else if (!UseMAFilter)
-            trade.Buy(LotSize, _Symbol, ask, buySl, buyTp, "SuperTrend");
+        {
+            trade.Buy(LotSize, _Symbol, ask, bufferSuperTrendValue[0], 0, "SuperTrend");
+            Status= BUY;
+
+        }
 
         break;
         }
     };
     case SELL:
     {
+        tools.CloseAllPositions(MagicNumber);
         if(Short)
         {
-        if (UseMAFilter && close < bufferMAFilterValue[1])
-            trade.Sell(LotSize, _Symbol, bid, sellSl, sellTp, "RSITrend");
+        if (UseMAFilter && close < Ma1.GetValue(1)&& Ma1.GetValue(1) < Ma2.GetValue(1))
+        {
+            trade.Sell(LotSize, _Symbol, bid, bufferSuperTrendValue[0], 0, "RSITrend");
+            Status= SELL;
+
+        }
         else if (!UseMAFilter)
-            trade.Sell(LotSize, _Symbol, bid,sellSl, sellTp, "RSITrend");
+        {
+            trade.Sell(LotSize, _Symbol, bid,bufferSuperTrendValue[0], 0, "RSITrend");
+            Status= SELL;
+        }
         break;
         }
 
@@ -105,8 +118,6 @@ void OnTick()
 
 void OnDeinit(const int reason)
 {
-    IndicatorRelease(handleSuperTrend);
-    IndicatorRelease(handleMAFilter);
     Print("🚀🚀🚀 EA移除");
 }
 
