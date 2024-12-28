@@ -36,9 +36,9 @@ CTools tools(_Symbol, &trade);
 int OnInit()
 {
 
-    handleATR = iATR(_Symbol, TimeFrame, 14);
-    handleWPR = iWPR(_Symbol, TimeFrame, 14);
-    handleEMA = iMA(_Symbol, TimeFrame, EMAValue, 0, MODE_EMA, PRICE_CLOSE);
+    // handleATR = iATR(_Symbol, TimeFrame, 14);
+    handleWPR = iWPR(_Symbol, TimeFrame, 30);
+    // handleEMA = iMA(_Symbol, TimeFrame, EMAValue, 0, MODE_EMA, PRICE_CLOSE);
 
     ArraySetAsSeries(bufferATRValue, true);
     ArraySetAsSeries(bufferWPRValue, true);

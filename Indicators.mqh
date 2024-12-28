@@ -214,3 +214,32 @@ public:
 
     }
 };
+
+
+
+class CMFI : public CIndicator
+{
+private:
+    int m_value;
+    double bufferValue[];
+
+public:
+    CMFI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
+
+    CMFI::~CMFI() {}
+
+    // 初始化RSI指标，获取指标句柄
+    bool Initialize()
+    {
+        ArraySetAsSeries(bufferValue, true);
+        m_handle = iMFI(m_symbol, m_timeFrame, m_value, VOLUME_TICK);
+        return (m_handle != INVALID_HANDLE);
+    }
+
+    // 获取当前K线的前一个指标当前值
+    double GetValue(int index)
+    {
+        CopyBuffer(m_handle, 0, index, 1, bufferValue);
+        return bufferValue[0];
+    }
+};

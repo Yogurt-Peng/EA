@@ -12,14 +12,18 @@ input int GridDistance = 100;                     // 网格间距（以点数为
 
 input group "指标参数";
 input int RSIValue = 14;      // RSI指标值
+input int MFIValue = 14;      // MFI指标值
 input int RSIOverbought = 70; // 超买区
 input int RSIOversold = 30;   // 超卖区
+input bool IsTimeFilter = true; // 是否启用时间过滤
+input int StopTime = 12;     // 止损休息时间
 
 // 声明交易和工具对象
 CTrade trade;
 CTools tools(_Symbol, &trade);
 CDraw draw;
-CRSI rsi(_Symbol, TimeFrame, RSIValue);
+// CRSI rsi(_Symbol, TimeFrame, RSIValue);
+CMFI mfi(_Symbol, TimeFrame, MFIValue);
 
 // 跟踪基础价格和当前网格层级的变量
 int currentGridLevel = 0; // 当前网格层级
@@ -29,19 +33,29 @@ double basePrice = 0;     // 基础价格
 // 初始化策略的函数
 int OnInit()
 {
-    rsi.Initialize();
+    // rsi.Initialize();
+    mfi.Initialize();
     trade.SetExpertMagicNumber(MagicNumber); // 设置交易的MagicNumber
     // 将初始基准价格设为当前买价
 
-    ChartIndicatorAdd(0, 1, rsi.GetHandle());
+    // ChartIndicatorAdd(0, 1, rsi.GetHandle());
+    ChartIndicatorAdd(0, 1, mfi.GetHandle());
     return (INIT_SUCCEEDED);
 }
 
 int loopBars = 0;
 
 // 每个行情更新时调用的函数
+
+
+datetime timeStop = 0;
+
 void OnTick()
 {
+
+    if(timeStop > TimeCurrent() &&IsTimeFilter)
+        return;
+
     // 检查是否在指定时间周期内生成了新K线
     if (!tools.IsNewBar(PERIOD_M1))
         return;
@@ -99,6 +113,7 @@ void OnTick()
                 {
                     basePrice = 0;
                     currentMode = NONE;
+                    timeStop = TimeCurrent() + StopTime * 3600; // 设置新的止损休息时间
                 }
             }
         }
@@ -110,6 +125,7 @@ void OnTick()
                 {
                     basePrice = 0;
                     currentMode = NONE;
+                    timeStop = TimeCurrent() + StopTime * 3600; // 设置新的止损休息时间
                 }
             }
         }
@@ -155,15 +171,26 @@ void OnTick()
         currentMode = rsiSign;
     }
 }
+// SIGN GetSign()
+// {
+
+//     if (rsi.GetValue(2) > RSIOverbought && rsi.GetValue(1) < RSIOverbought)
+//         return SELL;
+
+//     else if (rsi.GetValue(2) < RSIOversold && rsi.GetValue(1) > RSIOversold)
+//         return BUY;
+
+//     return NONE;
+// }
+
 SIGN GetSign()
 {
 
-    if (rsi.GetValue(2) > RSIOverbought && rsi.GetValue(1) < RSIOverbought)
+    if (mfi.GetValue(2) > 80 && mfi.GetValue(1) < 80)
         return SELL;
 
-    else if (rsi.GetValue(2) < RSIOversold && rsi.GetValue(1) > RSIOversold)
+    else if (mfi.GetValue(2) < 20 && mfi.GetValue(1) > 20)
         return BUY;
 
     return NONE;
 }
-
