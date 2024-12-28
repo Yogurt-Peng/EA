@@ -26,11 +26,11 @@ public:
     // 盈亏衡
     void ApplyBreakEven(int triggerPPoints, int movePoints, long magicNum);
     // 关闭所有订单
-    void CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type);
+    bool CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type);
     // 关闭所有订单
-    void CloseAllPositions(long magicNum);
+    bool CloseAllPositions(long magicNum);
     // 删除所有挂单
-    void DeleteAllOrders(long magicNum);
+    bool DeleteAllOrders(long magicNum);
     // 获取当前持仓数量
     int GetPositionCount(long magicNum);
     // 获取当前挂单数量
@@ -175,7 +175,7 @@ void CTools::ApplyTrailingStop(int distancePoints, long magicNum)
     }
 }
 
-void CTools::CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type)
+bool CTools::CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type)
 {
     for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
@@ -184,36 +184,55 @@ void CTools::CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type)
             if (type == m_positionInfo.PositionType())
             {
                 if (!m_trade.PositionClose(m_positionInfo.Ticket()))
+                {
                     Print(m_symbol, "|", magicNum, " 平仓失败, Return code=", m_trade.ResultRetcode(),
                           ". Code description: ", m_trade.ResultRetcodeDescription());
+                return false;
+
+                }
+
             }
         }
     }
+    return true;
+
 }
-void CTools::CloseAllPositions(long magicNum)
+bool CTools::CloseAllPositions(long magicNum)
 {
     for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
         if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
         {
             if (!m_trade.PositionClose(m_positionInfo.Ticket()))
+            {
                 Print(m_symbol, "|", magicNum, " 平仓失败, Return code=", m_trade.ResultRetcode(),
                       ". Code description: ", m_trade.ResultRetcodeDescription());
+                return false;
+            }
+
         }
     }
+    return true;
 }
 
-void CTools::DeleteAllOrders(long magicNum)
+bool CTools::DeleteAllOrders(long magicNum)
 {
     for (int i = OrdersTotal() - 1; i >= 0; i--)
     {
         if (m_orderInfo.SelectByIndex(i) && m_orderInfo.Symbol() == m_symbol && m_orderInfo.Magic() == magicNum)
         {
             if (!m_trade.OrderDelete(m_orderInfo.Ticket()))
+            {
                 Print(m_symbol, "|", magicNum, " 删除挂单失败, Return code=", m_trade.ResultRetcode(),
                       ". Code description: ", m_trade.ResultRetcodeDescription());
+
+                return false;
+            }
+
         }
     }
+                return true;
+
 }
 
 int CTools::GetOrderCount(long magicNum)

@@ -54,6 +54,7 @@ public:
 
     void DrawHorizontalLine(string name, double y1, color col = clrRed, int width = 1, int sub_window = 0)
     {
+        if(y1 <= 0)return;
         if (ObjectCreate(0, name, OBJ_HLINE, sub_window, 0, y1))
         {
             //--- 设置线的颜色
