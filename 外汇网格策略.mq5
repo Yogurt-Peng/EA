@@ -11,29 +11,30 @@ input int GridNumber = 4;                         // 网格数量
 input int GridDistance = 100;                     // 网格间距（以点数为单位）
 
 input group "指标参数";
-input int RSIValue = 14;      // RSI指标值
-input int MFIValue = 14;      // MFI指标值
-input int RSIOverbought = 70; // 超买区
-input int RSIOversold = 30;   // 超卖区
+input int RSIValue = 14; // RSI指标值
+input int MFIValue = 14; // MFI指标值
+
 input bool IsTimeFilter = true; // 是否启用时间过滤
-input int StopTime = 12;     // 止损休息时间
+input int StopTime = 12;        // 止损休息时间
 
 // 声明交易和工具对象
 CTrade trade;
 CTools tools(_Symbol, &trade);
 CDraw draw;
-// CRSI rsi(_Symbol, TimeFrame, RSIValue);
+CRSI rsi(_Symbol, TimeFrame, RSIValue);
 CMFI mfi(_Symbol, TimeFrame, MFIValue);
 
 // 跟踪基础价格和当前网格层级的变量
 int currentGridLevel = 0; // 当前网格层级
 SIGN currentMode = NONE;  // 当前模式（0：等待买入，1：等待卖出）
 double basePrice = 0;     // 基础价格
+int RSIOverbought = 70;   // 超买区
+int RSIOversold = 30;     // 超卖区
 
 // 初始化策略的函数
 int OnInit()
 {
-    // rsi.Initialize();
+    rsi.Initialize();
     mfi.Initialize();
     trade.SetExpertMagicNumber(MagicNumber); // 设置交易的MagicNumber
     // 将初始基准价格设为当前买价
@@ -47,13 +48,12 @@ int loopBars = 0;
 
 // 每个行情更新时调用的函数
 
-
 datetime timeStop = 0;
 
 void OnTick()
 {
 
-    if(timeStop > TimeCurrent() &&IsTimeFilter)
+    if (timeStop > TimeCurrent() && IsTimeFilter)
         return;
 
     // 检查是否在指定时间周期内生成了新K线
@@ -64,12 +64,23 @@ void OnTick()
     MqlDateTime currentTimeStruct;
     TimeToStruct(currentTime, currentTimeStruct);
 
-    if (currentTimeStruct.day == 5 && currentTimeStruct.hour >= 22)
+    if (currentTimeStruct.day_of_week == 5 && currentTimeStruct.hour >= 22)
     {
         if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
         {
             basePrice = 0;
             currentMode = NONE;
+            Print("周五关闭所有订单");
+        }
+        return;
+    }
+    if (currentTimeStruct.day_of_week == 1)
+    {
+        if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
+        {
+            basePrice = 0;
+            currentMode = NONE;
+            Print("周一不开单");
         }
         return;
     }
@@ -145,15 +156,15 @@ void OnTick()
     }
 
     SIGN rsiSign = GetSign();
-    if (rsiSign == BUY && currentMode == NONE &&tools.GetPositionCount(MagicNumber) ==0)
+    if (rsiSign == BUY && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
     {
-        trade.Buy(LotSize,_Symbol,0,0,0,"初始买单");
+        trade.Buy(LotSize, _Symbol, 0, 0, 0, "初始买单");
 
         basePrice = ask;
     }
-    else if (rsiSign == SELL && currentMode == NONE&&tools.GetPositionCount(MagicNumber) ==0)
+    else if (rsiSign == SELL && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
     {
-        trade.Sell(LotSize,_Symbol,0,0,0,"初始卖单");
+        trade.Sell(LotSize, _Symbol, 0, 0, 0, "初始卖单");
 
         basePrice = bid;
     }
@@ -171,26 +182,26 @@ void OnTick()
         currentMode = rsiSign;
     }
 }
-// SIGN GetSign()
-// {
-
-//     if (rsi.GetValue(2) > RSIOverbought && rsi.GetValue(1) < RSIOverbought)
-//         return SELL;
-
-//     else if (rsi.GetValue(2) < RSIOversold && rsi.GetValue(1) > RSIOversold)
-//         return BUY;
-
-//     return NONE;
-// }
-
 SIGN GetSign()
 {
 
-    if (mfi.GetValue(2) > 80 && mfi.GetValue(1) < 80)
+    if (rsi.GetValue(2) > RSIOverbought && rsi.GetValue(1) < RSIOverbought)
         return SELL;
 
-    else if (mfi.GetValue(2) < 20 && mfi.GetValue(1) > 20)
+    else if (rsi.GetValue(2) < RSIOversold && rsi.GetValue(1) > RSIOversold)
         return BUY;
 
     return NONE;
 }
+
+// SIGN GetSign()
+// {
+
+//     if (mfi.GetValue(2) > 80 && mfi.GetValue(1) < 80)
+//         return SELL;
+
+//     else if (mfi.GetValue(2) < 20 && mfi.GetValue(1) > 20)
+//         return BUY;
+
+//     return NONE;
+// }
