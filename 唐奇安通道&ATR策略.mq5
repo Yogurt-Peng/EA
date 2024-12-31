@@ -66,6 +66,7 @@ void OnDeinit(const int reason)
 SIGN GetSign()
 {
 
+
     double close = iClose(_Symbol, TimeFrame, 1);
     if (close > donchian.GetValue(0))
         return SELL;
