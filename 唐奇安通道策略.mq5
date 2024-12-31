@@ -11,7 +11,6 @@ input double TakeProfitK = 1;                 // 止盈系数
 
 input int ShortAtrValue = 40; // 短期ATR值
 input int LongAtrValue = 95;  // 长期ATR值
-input int DonchianValue = 95; // 唐安奇通道长度
 
 CTrade trade;
 CTools tools(_Symbol, &trade);
