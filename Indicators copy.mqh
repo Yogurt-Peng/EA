@@ -7,9 +7,16 @@ protected:
 
     virtual int CreateHandle() = 0; // 纯虚方法，由子类实现
 
+
 public:
     CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {}
-    virtual ~CIndicator() {}
+    virtual ~CIndicator()
+    {
+        if (m_handle != INVALID_HANDLE)
+        {
+            IndicatorRelease(m_handle);
+        }
+    }
 
     bool Initialize()
     {
@@ -17,7 +24,10 @@ public:
         return (m_handle != INVALID_HANDLE);
     }
 
-    virtual double GetValue(int index) = 0;
+       // 基类中声明 GetValue 为虚函数（派生类可以重载）
+    virtual double GetValue(int index) = 0; 
+    // 如果需要两个参数，可以重载
+    virtual double GetValue(int bufferIndex, int index) { return 0.0; }
 };
 
 
@@ -65,7 +75,7 @@ public:
     CBollingerBands(string symbol, ENUM_TIMEFRAMES timeFrame, int bbValue, int bbDeviation)
         : CIndicator(symbol, timeFrame), m_value(bbValue), m_deviation(bbDeviation) {}
 
-    double GetValue(int bufferIndex, int index)
+    double GetValue(int bufferIndex, int index) override
     {
         CopyBuffer(m_handle, bufferIndex, index, 1, bufferValue);
         return bufferValue[0];
@@ -134,14 +144,14 @@ private:
 public:
     CMFI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
 
-    CMFI::~CMFI() {}
+    CMFI::~CMFI() {};
 
     // 获取当前K线的前一个指标当前值
-    double GetValue(int index)
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, 0, index, 1, bufferValue);
         return bufferValue[0];
-    }
+    };
 };
 
 class CHeiKenAshi : public CIndicator
@@ -163,7 +173,7 @@ public:
     ~CHeiKenAshi() {};
 
     // Opne High Close Low
-    double GetValue(int index)
+    double GetValue(int index)override
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
         return bufferValue[0];
@@ -228,7 +238,7 @@ public:
     CDonchian(string symbol, ENUM_TIMEFRAMES timeFrame, int donchianValue) : CIndicator(symbol, timeFrame), m_donchianValue(donchianValue) {};
     ~CDonchian() {};
 
-    double GetValue(int index)
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
 
