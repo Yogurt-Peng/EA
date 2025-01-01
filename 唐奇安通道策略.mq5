@@ -73,12 +73,14 @@ void OnTick()
 
     if (sign == BUY)
     {
+        Print("🚀🚀🚀 唐奇安通道策略买入信号");
         tools.CloseAllPositions(MagicNumber, POSITION_TYPE_SELL);
         if (tools.GetPositionCount(MagicNumber) == 0)
             trade.Buy(LotSize, _Symbol, ask, buySl, buyTp);
     }
     else if (sign == SELL)
     {
+        Print("🚀🚀🚀 唐奇安通道策略卖出信号");
         tools.CloseAllPositions(MagicNumber, POSITION_TYPE_BUY);
         if (tools.GetPositionCount(MagicNumber) == 0)
             trade.Sell(LotSize, _Symbol, bid, sellSl, sellTp);
