@@ -20,6 +20,7 @@ CATR shortAtr(_Symbol, TimeFrame, ShortAtrValue);
 CATR longAtr(_Symbol, TimeFrame, LongAtrValue);
 CDonchian donchian(_Symbol, TimeFrame, LongAtrValue);
 
+
 int OnInit()
 {
     Print("🚀🚀🚀 唐安奇通道策略启动...");
