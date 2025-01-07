@@ -5,8 +5,8 @@
 
 // 基本参数
 input group "基本参数";
-input int MagicNumber = 555245;                   // EA编号 (专家交易系统编号)
-input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 交易周期
+input int MagicNumber = 12572;                   // EA编号 (专家交易系统编号)
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_H1; // 交易周期
 input double LotSize = 0.01;                      // 交易手数
 input int GridDistance = 400;                     // 网格间距（以点数为单位）
 input group "指标参数";
@@ -22,15 +22,16 @@ CDonchian donchian(_Symbol, TimeFrame, DonchianValue);
 SIGN currentMode = NONE;  // 当前模式（0：等待买入，1：等待卖出）
 double basePrice = 0;     // 基础价格
 int GridNumber = 3;       // 网格数量
-
+string EmailSubject = "外汇网格交易通知";        // 邮件主题
+bool IsDebug = true; // 是否调试模式
 // 初始化策略的函数
 int OnInit()
 {
     donchian.Initialize();
     trade.SetExpertMagicNumber(MagicNumber); // 设置交易的MagicNumber
     // 将初始基准价格设为当前买价
-    EventSetTimer(10); // 设置定时器，每30秒执行一次OnTimer函数
-
+    EventSetTimer(2); // 设置定时器，每30秒执行一次OnTimer函数
+    IsDebug=MQLInfoInteger(MQL_TESTER);
     // ChartIndicatorAdd(0, 1, rsi.GetHandle());
     ChartIndicatorAdd(0, 0, donchian.GetHandle());
     return (INIT_SUCCEEDED);
@@ -44,13 +45,14 @@ void OnTick()
     // 检查是否在指定时间周期内生成了新K线
     if (!tools.IsNewBar(PERIOD_M1))
         return;
-    // SYMBOL_SPREAD 检查当前交易品种的点差是否超过指定值
-    if (SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > 30)
-        return;
 
     CheckFridayClose();
     ManagePositions();
     SIGN sign = GetSign();
+
+    // SYMBOL_SPREAD 检查当前交易品种的点差是否超过指定值
+    if (SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > 40)
+        return;
     if (sign != NONE) HandleNewSignal(sign);
 
 }
@@ -58,7 +60,7 @@ void OnTick()
 
 void OnTimer()
 {
-    if (!MQLInfoInteger(MQL_TESTER))
+    if (!IsDebug)
     {
         bool isAutoTradingEnabled = TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
         string dbgInfo[4] = {"外汇网格", "", "",""};
@@ -117,6 +119,13 @@ void CheckFridayClose()
                 ResetTradeState();
                 isFridayClosed = true; // 设置周五已平仓标记
                 Print("周五晚上平仓完成，禁止开仓至周一");
+                if (!IsDebug)
+                    SendEmail(EmailSubject, "周五：平仓成功，禁止开仓至周一");
+
+            }else
+            {
+                if (!IsDebug)
+                    SendEmail(EmailSubject, "周五：平仓失败，请检查");
             }
         }
     }
@@ -158,6 +167,8 @@ void HandleNewSignal(SIGN signal)
     else
     {
         Print("下单失败，未更新状态和网格订单");
+        if (!IsDebug)
+            SendEmail(EmailSubject, "初始下单失败，请检查");
     }
 }
 
@@ -189,77 +200,61 @@ void ManagePositions()
     switch (positionCount)
     {
     case 1: // 持仓数量为 1
-        HandleSinglePosition(totalProfit);
+        HandlePosition(totalProfit);
         break;
-
     case 2: // 持仓数量为 2
-        HandleDoublePosition(totalProfit);
+        HandlePosition(totalProfit);
         break;
-
     case 3: // 持仓数量为 3
         HandleTriplePosition(totalProfit, ask, bid);
         break;
-
     default:
         // 持仓数量大于 3 的其他逻辑可在此添加
         break;
     }
 }
 
-// 处理持仓数量为 1 的情况
-void HandleSinglePosition(double totalProfit)
+// 通用处理持仓关闭逻辑
+bool CloseAllAndReset()
 {
-    if (totalProfit > GridDistance)
+    if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
     {
-        if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-        {
-            ResetTradeState();
-        }
+        ResetTradeState();
+        return true;
+    }else
+    {
+        if (!IsDebug)
+            SendEmail(EmailSubject, "平仓失败，请检查");
     }
+    return false;
 }
 
-// 处理持仓数量为 2 的情况
-void HandleDoublePosition(double totalProfit)
+// 处理持仓数量为 1 或 2 的情况
+void HandlePosition(double totalProfit)
 {
     if (totalProfit > GridDistance)
     {
-        if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-        {
-            ResetTradeState();
-        }
+        CloseAllAndReset();
     }
 }
 
 // 处理持仓数量为 3 的情况
 void HandleTriplePosition(double totalProfit, double ask, double bid)
 {
+    bool shouldClose = false;
+
     if (currentMode == SELL)
     {
-        if (bid > basePrice + GridNumber * GridDistance * _Point)
-        {
-            if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-            {
-                ResetTradeState();
-            }
-        }
+        shouldClose = (bid > basePrice + GridNumber * GridDistance * _Point);
     }
     else if (currentMode == BUY)
     {
-        if (ask < basePrice - GridNumber * GridDistance * _Point)
-        {
-            if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-            {
-                ResetTradeState();
-            }
-        }
+        shouldClose = (ask < basePrice - GridNumber * GridDistance * _Point);
     }
 
-    if (totalProfit > 0)
+    if (shouldClose || totalProfit > 0)
     {
-        if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-        {
-            ResetTradeState();
-        }
+        CloseAllAndReset();
     }
 }
 

@@ -348,3 +348,29 @@ double CTools::GetTotalProfit(long magicNum)
 //         }
 //     }
 // }
+
+
+// 函数：发送邮件
+bool SendEmail(const string subject, const string body)
+{
+    // 检查是否启用了终端发送邮件的权限
+    if (!TerminalInfoInteger(TERMINAL_EMAIL_ENABLED))
+    {
+        Print("错误：客户端终端没有发送邮件消息的权限。");
+        return false;
+    }
+
+    // 重置错误状态
+    ResetLastError();
+
+    // 尝试发送邮件
+    if (!SendMail(subject, body))
+    {
+        int errorCode = GetLastError();
+        PrintFormat("发送邮件失败。错误代码：%d", errorCode);
+        return false;
+    }
+
+    Print("邮件发送成功。");
+    return true;
+}
