@@ -1,6 +1,7 @@
 #include "Tools.mqh"
 #include "Indicators.mqh"
 #include "Draw.mqh"
+#include"PerformanceEvaluator.mqh"
 
 // 基本参数
 input group "基本参数";
@@ -11,8 +12,7 @@ input int GridNumber = 4;                         // 网格数量
 input int GridDistance = 100;                     // 网格间距（以点数为单位）
 
 input group "指标参数";
-input int RSIValue = 14; // RSI指标值
-input int MFIValue = 14; // MFI指标值
+input int DonchianValue = 20; // 唐奇安通道指标值
 
 input bool IsTimeFilter = true; // 是否启用时间过滤
 input int StopTime = 12;        // 止损休息时间
@@ -21,8 +21,7 @@ input int StopTime = 12;        // 止损休息时间
 CTrade trade;
 CTools tools(_Symbol, &trade);
 CDraw draw;
-CRSI rsi(_Symbol, TimeFrame, RSIValue);
-CMFI mfi(_Symbol, TimeFrame, MFIValue);
+CDonchian donchian(_Symbol, TimeFrame, DonchianValue);
 
 // 跟踪基础价格和当前网格层级的变量
 int currentGridLevel = 0; // 当前网格层级
@@ -34,13 +33,12 @@ int RSIOversold = 30;     // 超卖区
 // 初始化策略的函数
 int OnInit()
 {
-    rsi.Initialize();
-    mfi.Initialize();
+    donchian.Initialize();
     trade.SetExpertMagicNumber(MagicNumber); // 设置交易的MagicNumber
     // 将初始基准价格设为当前买价
 
     // ChartIndicatorAdd(0, 1, rsi.GetHandle());
-    ChartIndicatorAdd(0, 1, mfi.GetHandle());
+    ChartIndicatorAdd(0, 1, donchian.GetHandle());
     return (INIT_SUCCEEDED);
 }
 
@@ -74,16 +72,16 @@ void OnTick()
         }
         return;
     }
-    if (currentTimeStruct.day_of_week == 1)
-    {
-        if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
-        {
-            basePrice = 0;
-            currentMode = NONE;
-            Print("周一不开单");
-        }
-        return;
-    }
+    // if (currentTimeStruct.day_of_week == 1)
+    // {
+    //     if (tools.CloseAllPositions(MagicNumber) && tools.DeleteAllOrders(MagicNumber))
+    //     {
+    //         basePrice = 0;
+    //         currentMode = NONE;
+    //         Print("周一不开单");
+    //     }
+    //     return;
+    // }
 
     double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -155,14 +153,14 @@ void OnTick()
         break;
     }
 
-    SIGN rsiSign = GetSign();
-    if (rsiSign == BUY && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
+    SIGN sign = GetSign();
+    if (sign == BUY && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
     {
         trade.Buy(LotSize, _Symbol, 0, 0, 0, "初始买单");
 
         basePrice = ask;
     }
-    else if (rsiSign == SELL && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
+    else if (sign == SELL && currentMode == NONE && tools.GetPositionCount(MagicNumber) == 0)
     {
         trade.Sell(LotSize, _Symbol, 0, 0, 0, "初始卖单");
 
@@ -173,35 +171,36 @@ void OnTick()
     {
         for (int i = 0; i < GridNumber - 1; i++)
         {
-            if (rsiSign == BUY)
+            if (sign == BUY)
                 trade.BuyLimit(LotSize, basePrice - (i + 1) * GridDistance * _Point, _Symbol);
 
-            else if (rsiSign == SELL)
+            else if (sign == SELL)
                 trade.SellLimit(LotSize, basePrice + (i + 1) * GridDistance * _Point, _Symbol);
         }
-        currentMode = rsiSign;
+        currentMode = sign;
     }
+}
+
+
+void OnDeinit(const int reason)
+{
+
+    CPerformanceEvaluator::CalculateOutlierRatio();
+    CPerformanceEvaluator::CalculateWeeklyProfitAndLoss();
+    
+
+    IndicatorRelease(donchian.GetHandle());
+    Print("🚀🚀🚀 唐安奇通道策略停止...");
 }
 SIGN GetSign()
 {
 
-    if (rsi.GetValue(2) > RSIOverbought && rsi.GetValue(1) < RSIOverbought)
+    double close = iClose(_Symbol, TimeFrame, 1);
+
+    if (close > donchian.GetValue(0))
         return SELL;
-
-    else if (rsi.GetValue(2) < RSIOversold && rsi.GetValue(1) > RSIOversold)
+    else if (close < donchian.GetValue(1))
         return BUY;
-
     return NONE;
 }
 
-// SIGN GetSign()
-// {
-
-//     if (mfi.GetValue(2) > 80 && mfi.GetValue(1) < 80)
-//         return SELL;
-
-//     else if (mfi.GetValue(2) < 20 && mfi.GetValue(1) > 20)
-//         return BUY;
-
-//     return NONE;
-// }
