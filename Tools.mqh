@@ -33,6 +33,8 @@ public:
     bool DeleteAllOrders(long magicNum);
     // 获取当前持仓数量
     int GetPositionCount(long magicNum);
+    int GetPositionCount(long magicNum, ENUM_POSITION_TYPE type);
+
     // 获取当前挂单数量
     int GetOrderCount(long magicNum);
     // 计算手数
@@ -256,6 +258,21 @@ int CTools::GetPositionCount(long magicNum)
         if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
         {
             count++;
+        }
+    }
+    return count;
+}
+
+
+int CTools::GetPositionCount(long magicNum, ENUM_POSITION_TYPE type)
+{
+    int count = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
+        {
+            if (m_positionInfo.PositionType() == type)
+                count++;
         }
     }
     return count;
