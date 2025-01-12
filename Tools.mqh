@@ -282,15 +282,16 @@ int CTools::GetPositionCount(long magicNum, ENUM_POSITION_TYPE type)
 double CTools::CalcLots(double et, double sl, double slParam)
 {
     double slMoney = 0;
+    // 亏损的钱
     slMoney = AccountInfoDouble(ACCOUNT_BALANCE) * slParam / 100.0;
-    // 计算止损距离
+    // 几位小数
     int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
 
     double slDistance = NormalizeDouble(MathAbs(et - sl), digits) / Point();
 
     if (slDistance <= 0)
         return 0;
-
+    //SYMBOL_TRADE_TICK_VALUE_PROFIT的值
     double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
     if (tickValue == 0)
         return 0;

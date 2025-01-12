@@ -7,6 +7,8 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 
+
+
 #include <Trade/Trade.mqh>
 CTrade obj_Trade;
 
@@ -273,7 +275,7 @@ void OnTick(){
          if (open1 < close1 && open1 > SupportPriceLevel
             && low1 < SupportPriceLevel && Ask > SupportPriceLevel){
             Print("$$$$$$$$$$$$ BUY NOW SIGNAL!");
-            obj_Trade.Buy(0.01,_Symbol,Ask,Ask-350*5*_Point,Ask+350*_Point);
+            obj_Trade.Buy(0.01,_Symbol,Ask,Ask-350*_Point,Ask+350*2*_Point);
             SupportPriceTrade = SupportPriceLevel;
          }
          
@@ -303,30 +305,30 @@ void deleteLevel(string levelName){
 void draw_S_R_Level_Point(string objName,double price,datetime time,
       int arrowcode,int direction,color clr,double angle){
    //objName = " ";
-   StringConcatenate(objName,objName," @ \nTime: ",time,"\nPrice: ",DoubleToString(price,_Digits));
-   if (ObjectCreate(0,objName,OBJ_ARROW,0,time,price)) {
-      ObjectSetInteger(0,objName,OBJPROP_ARROWCODE,arrowcode);
-      ObjectSetInteger(0,objName,OBJPROP_COLOR,clr);
-      ObjectSetInteger(0,objName,OBJPROP_FONTSIZE,10);
-      if (direction > 0) ObjectSetInteger(0,objName,OBJPROP_ANCHOR,ANCHOR_TOP);
-      if (direction < 0) ObjectSetInteger(0,objName,OBJPROP_ANCHOR,ANCHOR_BOTTOM);
-   }
-   string prefix = resline_prefix;
-   string txt = "\n"+prefix+"("+DoubleToString(price,_Digits)+")";
-   string objNameDescription = objName + txt;
-   if (ObjectCreate(0,objNameDescription,OBJ_TEXT,0,time,price)) {
-     // ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "" + txt);
-      ObjectSetInteger(0,objNameDescription,OBJPROP_COLOR,clr);
-      ObjectSetDouble(0,objNameDescription,OBJPROP_ANGLE, angle);
-      ObjectSetInteger(0,objNameDescription,OBJPROP_FONTSIZE,10);
-      if (direction > 0) {
-         ObjectSetInteger(0,objNameDescription,OBJPROP_ANCHOR,ANCHOR_LEFT);
-         ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "    " + txt);
-      }
-      if (direction < 0) {
-         ObjectSetInteger(0,objNameDescription,OBJPROP_ANCHOR,ANCHOR_BOTTOM);
-         ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "    " + txt);
-      }
-   }
-   ChartRedraw(0);
+//    StringConcatenate(objName,objName," @ \nTime: ",time,"\nPrice: ",DoubleToString(price,_Digits));
+//    if (ObjectCreate(0,objName,OBJ_ARROW,0,time,price)) {
+//       ObjectSetInteger(0,objName,OBJPROP_ARROWCODE,arrowcode);
+//       ObjectSetInteger(0,objName,OBJPROP_COLOR,clr);
+//       ObjectSetInteger(0,objName,OBJPROP_FONTSIZE,10);
+//       if (direction > 0) ObjectSetInteger(0,objName,OBJPROP_ANCHOR,ANCHOR_TOP);
+//       if (direction < 0) ObjectSetInteger(0,objName,OBJPROP_ANCHOR,ANCHOR_BOTTOM);
+//    }
+//    string prefix = resline_prefix;
+//    string txt = "\n"+prefix+"("+DoubleToString(price,_Digits)+")";
+//    string objNameDescription = objName + txt;
+//    if (ObjectCreate(0,objNameDescription,OBJ_TEXT,0,time,price)) {
+//      // ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "" + txt);
+//       ObjectSetInteger(0,objNameDescription,OBJPROP_COLOR,clr);
+//       ObjectSetDouble(0,objNameDescription,OBJPROP_ANGLE, angle);
+//       ObjectSetInteger(0,objNameDescription,OBJPROP_FONTSIZE,10);
+//       if (direction > 0) {
+//          ObjectSetInteger(0,objNameDescription,OBJPROP_ANCHOR,ANCHOR_LEFT);
+//          ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "    " + txt);
+//       }
+//       if (direction < 0) {
+//          ObjectSetInteger(0,objNameDescription,OBJPROP_ANCHOR,ANCHOR_BOTTOM);
+//          ObjectSetString(0,objNameDescription,OBJPROP_TEXT, "    " + txt);
+//       }
+//    }
+//    ChartRedraw(0);
 }

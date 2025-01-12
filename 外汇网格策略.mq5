@@ -151,6 +151,8 @@ void HandleNewSignal(SIGN signal)
     double price = (signal == BUY) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);
     bool orderPlaced = false;
 
+
+
     // 根据信号执行下单
     if (signal == BUY)
         orderPlaced = trade.Buy(LotSize, _Symbol, 0, 0, 0, "初始买单");

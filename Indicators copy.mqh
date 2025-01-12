@@ -7,7 +7,6 @@ protected:
 
     virtual int CreateHandle() = 0; // 纯虚方法，由子类实现
 
-
 public:
     CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {}
     virtual ~CIndicator()
@@ -23,13 +22,13 @@ public:
         m_handle = CreateHandle();
         return (m_handle != INVALID_HANDLE);
     }
+    int GetHandle() { return m_handle; }
 
-       // 基类中声明 GetValue 为虚函数（派生类可以重载）
-    virtual double GetValue(int index) = 0; 
+    // 基类中声明 GetValue 为虚函数（派生类可以重载）
+    virtual double GetValue(int index) = 0;
     // 如果需要两个参数，可以重载
     virtual double GetValue(int bufferIndex, int index) { return 0.0; }
 };
-
 
 // RSI 指标类
 class CRSI : public CIndicator
@@ -108,8 +107,6 @@ public:
     }
 };
 
-
-
 // ATR 指标类
 class CATR : public CIndicator
 {
@@ -159,21 +156,19 @@ class CHeiKenAshi : public CIndicator
 private:
     double bufferValue[];
 
-
 protected:
     int CreateHandle() override
     {
         ArraySetAsSeries(bufferValue, true);
-        return iCustom(m_symbol, m_timeFrame,  "Examples\\Heiken_Ashi.ex5");
+        return iCustom(m_symbol, m_timeFrame, "Examples\\Heiken_Ashi.ex5");
     }
-
 
 public:
     CHeiKenAshi(string symbol, ENUM_TIMEFRAMES timeFrame) : CIndicator(symbol, timeFrame) {};
     ~CHeiKenAshi() {};
 
     // Opne High Close Low
-    double GetValue(int index)override
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
         return bufferValue[0];
@@ -181,18 +176,17 @@ public:
 
     void GetValues(int number, double &open[], double &high[], double &low[], double &close[])
     {
-        for( int i = 0; i < number; i++)
+        for (int i = 0; i < number; i++)
         {
-            CopyBuffer(m_handle, 0, i+1, 1, bufferValue);
+            CopyBuffer(m_handle, 0, i + 1, 1, bufferValue);
             open[i] = bufferValue[0];
-            CopyBuffer(m_handle, 1, i+1, 1, bufferValue);
+            CopyBuffer(m_handle, 1, i + 1, 1, bufferValue);
             high[i] = bufferValue[0];
-            CopyBuffer(m_handle, 2, i+1, 1, bufferValue);
+            CopyBuffer(m_handle, 2, i + 1, 1, bufferValue);
             low[i] = bufferValue[0];
-            CopyBuffer(m_handle, 3, i+1, 1, bufferValue);
+            CopyBuffer(m_handle, 3, i + 1, 1, bufferValue);
             close[i] = bufferValue[0];
         }
-
     }
 };
 // Pivots 类
@@ -221,12 +215,12 @@ public:
     }
 };
 
-
 class CDonchian : public CIndicator
 {
 private:
     int m_donchianValue;
     double bufferValue[];
+
 protected:
     int CreateHandle() override
     {
@@ -244,5 +238,38 @@ public:
 
         return bufferValue[0];
     }
+};
+
+class CAMA : public CIndicator
+{
+private:
+    int m_donchianValue;
+    double m_bufferValue[];
+    int m_AMAValue;     // KAMA指标值
+    int m_fastEMAValue;  // 快速EMA
+    int m_slowEMAValue; // 慢速EMA
+
+    protected:
+    int CreateHandle() override
+    {
+        ArraySetAsSeries(m_bufferValue, true);
+        return iAMA(m_symbol, m_timeFrame, m_AMAValue, m_fastEMAValue, m_slowEMAValue, 0,PRICE_CLOSE);
+    }
+public:
+    CAMA(string symbol, ENUM_TIMEFRAMES timeFrame, int amaValue, int fastEMAValue, int slowEMAValue)
+        : CIndicator(symbol, timeFrame), m_AMAValue(amaValue),m_fastEMAValue(fastEMAValue),m_slowEMAValue(slowEMAValue) {}
+
+    double GetValue(int index) override
+    {
+        CopyBuffer(m_handle, 0, index, 1, m_bufferValue);
+        return m_bufferValue[0];
+    }
+    void GetValues(int number,double &bufferValue[])
+    {
+        CopyBuffer(m_handle, 0, 1, number, bufferValue);
+    }
+
+
+
 
 };
