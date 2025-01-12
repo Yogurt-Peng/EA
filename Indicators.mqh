@@ -1,44 +1,61 @@
 class CIndicator
 {
 protected:
-    int m_handle;                // 指标句柄
-    string m_symbol;             // 交易品种
-    ENUM_TIMEFRAMES m_timeFrame; // 时间周期
-public:
-    CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {};
-    virtual ~CIndicator() {};
+    int m_handle;
+    string m_symbol;
+    ENUM_TIMEFRAMES m_timeFrame;
 
-    // 获取指标句柄
+    virtual int CreateHandle() = 0; // 纯虚方法，由子类实现
+
+public:
+    CIndicator(string symbol, ENUM_TIMEFRAMES timeFrame) : m_handle(INVALID_HANDLE), m_symbol(symbol), m_timeFrame(timeFrame) {}
+    virtual ~CIndicator()
+    {
+        if (m_handle != INVALID_HANDLE)
+        {
+            IndicatorRelease(m_handle);
+        }
+    }
+
+    bool Initialize()
+    {
+        m_handle = CreateHandle();
+        return (m_handle != INVALID_HANDLE);
+    }
     int GetHandle() { return m_handle; }
+
+    // 基类中声明 GetValue 为虚函数（派生类可以重载）
+    virtual double GetValue(int index) = 0;
+    // 如果需要两个参数，可以重载
+    virtual double GetValue(int bufferIndex, int index) { return 0.0; }
 };
 
+// RSI 指标类
 class CRSI : public CIndicator
 {
 private:
     int m_value;
     double bufferValue[];
 
-public:
-    CRSI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
-
-    CRSI::~CRSI() {}
-
-    // 初始化RSI指标，获取指标句柄
-    bool Initialize()
+protected:
+    int CreateHandle() override
     {
         ArraySetAsSeries(bufferValue, true);
-        m_handle = iRSI(m_symbol, m_timeFrame, m_value, PRICE_CLOSE);
-        return (m_handle != INVALID_HANDLE);
+        return iRSI(m_symbol, m_timeFrame, m_value, PRICE_CLOSE);
     }
 
-    // 获取当前K线的前一个指标当前值
-    double GetValue(int index)
+public:
+    CRSI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue)
+        : CIndicator(symbol, timeFrame), m_value(rsiValue) {}
+
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, 0, index, 1, bufferValue);
         return bufferValue[0];
     }
 };
 
+// 布林带指标类
 class CBollingerBands : public CIndicator
 {
 private:
@@ -46,26 +63,25 @@ private:
     int m_deviation;
     double bufferValue[];
 
-public:
-    CBollingerBands(string symbol, ENUM_TIMEFRAMES timeFrame, int bbValue, int bbDeviation) : CIndicator(symbol, timeFrame), m_value(bbValue), m_deviation(bbDeviation) {};
-    ~CBollingerBands() {};
-
-    // 初始化布林带指标，获取指标句柄
-    bool Initialize()
+protected:
+    int CreateHandle() override
     {
-        m_handle = iBands(m_symbol, m_timeFrame, m_value, 0, m_deviation, PRICE_CLOSE);
         ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
+        return iBands(m_symbol, m_timeFrame, m_value, 0, m_deviation, PRICE_CLOSE);
     }
 
-    // 获取布林带指标特定缓冲区（比如上轨、中轨、下轨等）的值，传入缓冲区索引参数
-    double GetValue(int bufferIndex, int index)
+public:
+    CBollingerBands(string symbol, ENUM_TIMEFRAMES timeFrame, int bbValue, int bbDeviation)
+        : CIndicator(symbol, timeFrame), m_value(bbValue), m_deviation(bbDeviation) {}
+
+    double GetValue(int bufferIndex, int index) override
     {
         CopyBuffer(m_handle, bufferIndex, index, 1, bufferValue);
         return bufferValue[0];
     }
 };
 
+// 移动平均线类
 class CMA : public CIndicator
 {
 private:
@@ -73,50 +89,128 @@ private:
     ENUM_MA_METHOD m_method;
     double bufferValue[];
 
-public:
-    CMA(string symbol, ENUM_TIMEFRAMES timeFrame, int maValue, ENUM_MA_METHOD maMethod) : CIndicator(symbol, timeFrame), m_value(maValue), m_method(maMethod) {};
-    ~CMA() {};
-
-    // 初始化移动平均线指标，获取指标句柄
-    bool Initialize()
+protected:
+    int CreateHandle() override
     {
-        m_handle = iMA(m_symbol, m_timeFrame, m_value, 0, m_method, PRICE_CLOSE);
         ArraySetAsSeries(bufferValue, true);
-
-        return (m_handle != INVALID_HANDLE);
+        return iMA(m_symbol, m_timeFrame, m_value, 0, m_method, PRICE_CLOSE);
     }
 
-    // 获取移动平均线指标当前值
-    double GetValue(int index)
+public:
+    CMA(string symbol, ENUM_TIMEFRAMES timeFrame, int maValue, ENUM_MA_METHOD maMethod)
+        : CIndicator(symbol, timeFrame), m_value(maValue), m_method(maMethod) {}
+
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, 0, index, 1, bufferValue);
         return bufferValue[0];
     }
 };
 
-class CPivots : public CIndicator
+// ATR 指标类
+class CATR : public CIndicator
 {
-
 private:
+    int m_atrValue;
     double bufferValue[];
-    int m_calcMode;
-    ENUM_TIMEFRAMES m_pivotTimeFrame;
 
-public:
-    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame, ENUM_TIMEFRAMES pivotTimeFrame = PERIOD_D1, int calcMode = 0) : CIndicator(symbol, timeFrame), m_calcMode(calcMode), m_pivotTimeFrame(pivotTimeFrame) {};
-    ~CPivots() {};
-    // 初始化Pivots指标，获取指标句柄
-    bool Initialize()
+protected:
+    int CreateHandle() override
     {
-        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_pivotTimeFrame, m_calcMode);
         ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
+        return iATR(m_symbol, m_timeFrame, m_atrValue);
     }
 
-    double GetValue(int index)
+public:
+    CATR(string symbol, ENUM_TIMEFRAMES timeFrame, int atrValue)
+        : CIndicator(symbol, timeFrame), m_atrValue(atrValue) {}
+
+    double GetValue(int index) override
+    {
+        CopyBuffer(m_handle, 0, index, 1, bufferValue);
+        return bufferValue[0];
+    }
+};
+// MFI 指标类
+class CMFI : public CIndicator
+{
+private:
+    int m_value;
+    double bufferValue[];
+
+public:
+    CMFI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
+
+    CMFI::~CMFI() {};
+
+    // 获取当前K线的前一个指标当前值
+    double GetValue(int index) override
+    {
+        CopyBuffer(m_handle, 0, index, 1, bufferValue);
+        return bufferValue[0];
+    };
+};
+
+class CHeiKenAshi : public CIndicator
+{
+private:
+    double bufferValue[];
+
+protected:
+    int CreateHandle() override
+    {
+        ArraySetAsSeries(bufferValue, true);
+        return iCustom(m_symbol, m_timeFrame, "Examples\\Heiken_Ashi.ex5");
+    }
+
+public:
+    CHeiKenAshi(string symbol, ENUM_TIMEFRAMES timeFrame) : CIndicator(symbol, timeFrame) {};
+    ~CHeiKenAshi() {};
+
+    // Opne High Close Low
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
+        return bufferValue[0];
+    }
 
+    void GetValues(int number, double &open[], double &high[], double &low[], double &close[])
+    {
+        for (int i = 0; i < number; i++)
+        {
+            CopyBuffer(m_handle, 0, i + 1, 1, bufferValue);
+            open[i] = bufferValue[0];
+            CopyBuffer(m_handle, 1, i + 1, 1, bufferValue);
+            high[i] = bufferValue[0];
+            CopyBuffer(m_handle, 2, i + 1, 1, bufferValue);
+            low[i] = bufferValue[0];
+            CopyBuffer(m_handle, 3, i + 1, 1, bufferValue);
+            close[i] = bufferValue[0];
+        }
+    }
+};
+// Pivots 类
+class CPivots : public CIndicator
+{
+private:
+    int m_calcMode;
+    ENUM_TIMEFRAMES m_pivotTimeFrame;
+    double bufferValue[];
+
+protected:
+    int CreateHandle() override
+    {
+        ArraySetAsSeries(bufferValue, true);
+        return iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\All Pivot Points", m_pivotTimeFrame, m_calcMode);
+    }
+
+public:
+    CPivots(string symbol, ENUM_TIMEFRAMES timeFrame, ENUM_TIMEFRAMES pivotTimeFrame = PERIOD_D1, int calcMode = 0)
+        : CIndicator(symbol, timeFrame), m_calcMode(calcMode), m_pivotTimeFrame(pivotTimeFrame) {}
+
+    double GetValue(int index) override
+    {
+        CopyBuffer(m_handle, index, 1, 1, bufferValue);
         return bufferValue[0];
     }
 };
@@ -127,119 +221,55 @@ private:
     int m_donchianValue;
     double bufferValue[];
 
+protected:
+    int CreateHandle() override
+    {
+        ArraySetAsSeries(bufferValue, true);
+        return iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\donchian_channel", m_donchianValue);
+    }
+
 public:
     CDonchian(string symbol, ENUM_TIMEFRAMES timeFrame, int donchianValue) : CIndicator(symbol, timeFrame), m_donchianValue(donchianValue) {};
     ~CDonchian() {};
 
-    // 初始化Donchian指标，获取指标句柄
-    bool Initialize()
-    {
-        m_handle = iCustom(m_symbol, m_timeFrame, "Wait_Indicators\\donchian_channel", m_donchianValue);
-        ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
-    }
-
-    double GetValue(int index)
+    double GetValue(int index) override
     {
         CopyBuffer(m_handle, index, 1, 1, bufferValue);
 
         return bufferValue[0];
     }
-
 };
 
-class CATR : public CIndicator
+class CAMA : public CIndicator
 {
 private:
-    int m_atrValue;
-    double bufferValue[];
+    int m_donchianValue;
+    double m_bufferValue[];
+    int m_AMAValue;     // KAMA指标值
+    int m_fastEMAValue;  // 快速EMA
+    int m_slowEMAValue; // 慢速EMA
 
+    protected:
+    int CreateHandle() override
+    {
+        ArraySetAsSeries(m_bufferValue, true);
+        return iAMA(m_symbol, m_timeFrame, m_AMAValue, m_fastEMAValue, m_slowEMAValue, 0,PRICE_CLOSE);
+    }
 public:
-    CATR(string symbol, ENUM_TIMEFRAMES timeFrame, int atrValue) : CIndicator(symbol, timeFrame), m_atrValue(atrValue) {};
-    ~CATR() {};
+    CAMA(string symbol, ENUM_TIMEFRAMES timeFrame, int amaValue, int fastEMAValue, int slowEMAValue)
+        : CIndicator(symbol, timeFrame), m_AMAValue(amaValue),m_fastEMAValue(fastEMAValue),m_slowEMAValue(slowEMAValue) {}
 
-    // 初始化ATR指标，获取指标句柄
-    bool Initialize()
+    double GetValue(int index) override
     {
-        m_handle = iATR(m_symbol, m_timeFrame, m_atrValue);
-        ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
+        CopyBuffer(m_handle, 0, index, 1, m_bufferValue);
+        return m_bufferValue[0];
+    }
+    void GetValues(int number,double &bufferValue[])
+    {
+        CopyBuffer(m_handle, 0, 1, number, bufferValue);
     }
 
-    double GetValue(int index)
-    {
-        CopyBuffer(m_handle, 0, index, 1, bufferValue);
-
-        return bufferValue[0];  
-    }
-};
-
-class CHeiKenAshi : public CIndicator
-{
-private:
-    double bufferValue[];
-
-public:
-    CHeiKenAshi(string symbol, ENUM_TIMEFRAMES timeFrame) : CIndicator(symbol, timeFrame) {};
-    ~CHeiKenAshi() {};
-
-    // 初始化HeiKenAshi指标，获取指标句柄
-    bool Initialize()
-    {
-        m_handle = iCustom(m_symbol, m_timeFrame, "Examples\\Heiken_Ashi.ex5");
-        Print("✔️[Indicators.mqh:190]: m_handle: ", m_handle);
-        ArraySetAsSeries(bufferValue, true);
-        return (m_handle != INVALID_HANDLE);
-    }
-    // Opne High Close Low
-    double GetValue(int index)
-    {
-        CopyBuffer(m_handle, index, 1, 1, bufferValue);
-        return bufferValue[0];
-    }
-
-    void GetValues(int number, double &open[], double &high[], double &low[], double &close[])
-    {
-        for( int i = 0; i < number; i++)
-        {
-            CopyBuffer(m_handle, 0, i+1, 1, bufferValue);
-            open[i] = bufferValue[0];
-            CopyBuffer(m_handle, 1, i+1, 1, bufferValue);
-            high[i] = bufferValue[0];
-            CopyBuffer(m_handle, 2, i+1, 1, bufferValue);
-            low[i] = bufferValue[0];
-            CopyBuffer(m_handle, 3, i+1, 1, bufferValue);
-            close[i] = bufferValue[0];
-        }
-
-    }
-};
 
 
 
-class CMFI : public CIndicator
-{
-private:
-    int m_value;
-    double bufferValue[];
-
-public:
-    CMFI(string symbol, ENUM_TIMEFRAMES timeFrame, int rsiValue) : CIndicator(symbol, timeFrame), m_value(rsiValue) {};
-
-    CMFI::~CMFI() {}
-
-    // 初始化RSI指标，获取指标句柄
-    bool Initialize()
-    {
-        ArraySetAsSeries(bufferValue, true);
-        m_handle = iMFI(m_symbol, m_timeFrame, m_value, VOLUME_TICK);
-        return (m_handle != INVALID_HANDLE);
-    }
-
-    // 获取当前K线的前一个指标当前值
-    double GetValue(int index)
-    {
-        CopyBuffer(m_handle, 0, index, 1, bufferValue);
-        return bufferValue[0];
-    }
 };

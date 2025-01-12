@@ -1,5 +1,5 @@
 #include "Tools.mqh"
-#include "Indicators copy.mqh"
+#include "Indicators.mqh"
 #include "Draw.mqh"
 
 input group "基本参数";
