@@ -2,6 +2,9 @@
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT; // 周期
 
 
+
+
+
 int OnInit()
 {
     Print("🚀🚀🚀 Vegas&Pivot趋势策略初始化中...");
