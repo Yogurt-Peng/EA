@@ -1,6 +1,5 @@
 #include <Trade/Trade.mqh>
 
-
 enum SIGN
 {
     BUY,
@@ -45,7 +44,7 @@ public:
     bool IsUpBar(MqlRates &rates);
     //  获取所有订单总的亏损
     double GetTotalProfit(long magicNum);
-
+    void ApplyTrailingStopByHighLow(int barNumber, long magicNum);
 };
 
 CTools::CTools(string _symbol, CTrade *_trade)
@@ -189,15 +188,12 @@ bool CTools::CloseAllPositions(long magicNum, ENUM_POSITION_TYPE type)
                 {
                     Print(m_symbol, "|", magicNum, " 平仓失败, Return code=", m_trade.ResultRetcode(),
                           ". Code description: ", m_trade.ResultRetcodeDescription());
-                return false;
-
+                    return false;
                 }
-
             }
         }
     }
     return true;
-
 }
 bool CTools::CloseAllPositions(long magicNum)
 {
@@ -211,7 +207,6 @@ bool CTools::CloseAllPositions(long magicNum)
                       ". Code description: ", m_trade.ResultRetcodeDescription());
                 return false;
             }
-
         }
     }
     return true;
@@ -230,11 +225,9 @@ bool CTools::DeleteAllOrders(long magicNum)
 
                 return false;
             }
-
         }
     }
-                return true;
-
+    return true;
 }
 
 int CTools::GetOrderCount(long magicNum)
@@ -263,7 +256,6 @@ int CTools::GetPositionCount(long magicNum)
     return count;
 }
 
-
 int CTools::GetPositionCount(long magicNum, ENUM_POSITION_TYPE type)
 {
     int count = 0;
@@ -291,7 +283,7 @@ double CTools::CalcLots(double et, double sl, double slParam)
 
     if (slDistance <= 0)
         return 0;
-    //SYMBOL_TRADE_TICK_VALUE_PROFIT的值
+    // SYMBOL_TRADE_TICK_VALUE_PROFIT的值
     double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
     if (tickValue == 0)
         return 0;
@@ -333,7 +325,6 @@ double CTools::GetTotalProfit(long magicNum)
     return totalProfit;
 };
 
-
 // 获取上一个订单关闭的原因
 // void GetLastOrderReason(long magicNum)
 // {
@@ -367,7 +358,6 @@ double CTools::GetTotalProfit(long magicNum)
 //     }
 // }
 
-
 // 函数：发送邮件
 bool SendEmail(const string subject, const string body)
 {
@@ -391,4 +381,54 @@ bool SendEmail(const string subject, const string body)
 
     Print("邮件发送成功。");
     return true;
+}
+void CTools::ApplyTrailingStopByHighLow(int barNumber, long magicNum)
+{
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        if (m_positionInfo.SelectByIndex(i) && m_positionInfo.Symbol() == m_symbol && m_positionInfo.Magic() == magicNum)
+        {
+            ulong tick = m_positionInfo.Ticket();
+            long type = m_positionInfo.PositionType();
+            double Pos_Open = m_positionInfo.PriceOpen();
+            double Pos_Curr = m_positionInfo.PriceCurrent();
+            double Pos_TP = m_positionInfo.TakeProfit();
+            double Pos_SL = m_positionInfo.StopLoss();
+
+            double high = iHigh(m_symbol, PERIOD_CURRENT, iHighest(m_symbol, PERIOD_CURRENT, MODE_HIGH, barNumber, 1));
+            double low = iLow(m_symbol, PERIOD_CURRENT, iLowest(m_symbol, PERIOD_CURRENT, MODE_LOW, barNumber, 1));
+
+            if (type == POSITION_TYPE_BUY)
+            {
+
+                if (Pos_SL < low && Pos_SL != 0)
+                {
+                    if (!m_trade.PositionModify(tick, low, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+                else if (Pos_SL == 0 && Pos_Curr > Pos_Open)
+                {
+                    if (!m_trade.PositionModify(tick, low, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+            }
+            else if (type == POSITION_TYPE_SELL)
+            {
+                if (Pos_SL > high && Pos_SL != 0)
+                {
+                    if (!m_trade.PositionModify(tick, high, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+                else if (Pos_SL == 0 && Pos_Curr < Pos_Open)
+                {
+                    if (!m_trade.PositionModify(tick, high, Pos_TP))
+                        Print(m_symbol, "|", magicNum, " 修改止损失败, Return code=", m_trade.ResultRetcode(),
+                              ". Code description: ", m_trade.ResultRetcodeDescription());
+                }
+            }
+        }
+    }
 }
